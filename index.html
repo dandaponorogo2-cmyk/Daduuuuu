@@ -1,630 +1,179 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Duel Dadu Anime - Telegram Mini App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <style>
-    :root {
-      --bg-anime: linear-gradient(165deg, #160c2e 0%, #24134d 45%, #0f172a 100%);
-      --glass: rgba(20, 16, 46, 0.72);
-      --glass-border: rgba(255, 255, 255, 0.16);
-      --text-main: #ffffff;
-      --text-sub: #cbd5e1;
-      --cyan: #38bdf8;
-      --pink: #f472b6;
-      --gold: #fbbf24;
-      --emerald: #34d399;
-      --crimson: #fb7185;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    body {
-      background: #130b29;
-      background-image: var(--bg-anime);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      padding: calc(10px + var(--tg-safe-area-inset-top, 0px)) 12px calc(18px + var(--tg-safe-area-inset-bottom, 0px));
-      overflow-x: hidden;
-      position: relative;
-    }
-
-    /* Latar Belakang Sakura & Bintang Anime */
-    .anime-sky {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      overflow: hidden;
-      z-index: 0;
-    }
-    .sakura {
-      position: absolute;
-      top: -30px;
-      font-size: 16px;
-      opacity: 0.55;
-      filter: drop-shadow(0 0 6px rgba(244, 114, 182, 0.6));
-      animation: sakuraFall linear infinite;
-    }
-    @keyframes sakuraFall {
-      0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0; }
-      15% { opacity: 0.65; }
-      85% { opacity: 0.55; }
-      100% { transform: translateY(105vh) translateX(45px) rotate(360deg); opacity: 0; }
-    }
-
-    .app {
-      width: 100%;
-      max-width: 440px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      position: relative;
-      z-index: 1;
-    }
-    .app.screen-shake {
-      animation: appShake 0.4s ease;
-    }
-    @keyframes appShake {
-      0%, 100% { transform: translate(0, 0); }
-      20% { transform: translate(-6px, 3px); }
-      40% { transform: translate(6px, -3px); }
-      60% { transform: translate(-4px, -2px); }
-      80% { transform: translate(4px, 2px); }
-    }
-
-    /* Header Anime */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      background: var(--glass);
-      border: 1.5px solid var(--glass-border);
-      backdrop-filter: blur(14px);
-      padding: 10px 12px;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-    }
-    .title-wrap h2 {
-      font-size: 15px;
-      font-weight: 800;
-      background: linear-gradient(90deg, #38bdf8, #f472b6, #fbbf24);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .title-wrap p {
-      font-size: 11px;
-      color: var(--text-sub);
-      margin-top: 1px;
-    }
-    .header-right { display: flex; align-items: center; gap: 7px; }
-    .stats-pill {
-      background: rgba(244, 114, 182, 0.16);
-      border: 1px solid rgba(244, 114, 182, 0.45);
-      color: #fbcfe8;
-      padding: 4px 9px;
-      border-radius: 11px;
-      font-size: 11px;
-      font-weight: 800;
-      line-height: 1.3;
-      text-align: right;
-    }
-    .btn-sound {
-      width: 36px;
-      height: 36px;
-      border-radius: 11px;
-      border: 1.5px solid var(--glass-border);
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      font-size: 17px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    /* Mode Selector */
-    .mode-tabs {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      background: var(--glass);
-      padding: 4px;
-      border-radius: 14px;
-      border: 1px solid var(--glass-border);
-    }
-    .mode-tab {
-      border: none;
-      background: transparent;
-      color: var(--text-sub);
-      font-size: 12px;
-      font-weight: 800;
-      padding: 8px 4px;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .mode-tab.active {
-      background: linear-gradient(135deg, #ec4899, #8b5cf6);
-      color: #ffffff;
-      box-shadow: 0 4px 14px rgba(236, 72, 153, 0.4);
-    }
-
-    /* Online Panel */
-    .online-panel {
-      display: none;
-      background: var(--glass);
-      border: 1.5px solid var(--glass-border);
-      border-radius: 15px;
-      padding: 10px;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .online-panel.show { display: flex; }
-    .online-row { display: flex; gap: 7px; align-items: center; }
-    .input-code {
-      flex: 1;
-      min-width: 0;
-      padding: 9px 10px;
-      border-radius: 10px;
-      border: 1px solid var(--glass-border);
-      background: rgba(0, 0, 0, 0.4);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 800;
-      text-align: center;
-      letter-spacing: 3px;
-    }
-    .input-code::placeholder { letter-spacing: 0; font-weight: 500; color: #94a3b8; }
-    .btn-mini {
-      border: none;
-      border-radius: 10px;
-      padding: 9px 11px;
-      font-size: 12px;
-      font-weight: 800;
-      color: #fff;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .btn-create { background: linear-gradient(135deg, #10b981, #059669); }
-    .btn-join { background: linear-gradient(135deg, #0ea5e9, #6366f1); }
-    .btn-share { background: rgba(56, 189, 248, 0.22); border: 1px solid var(--cyan); color: var(--cyan); }
-    .btn-leave { background: rgba(251, 113, 133, 0.22); border: 1px solid var(--crimson); color: var(--crimson); }
-    .room-badge { flex: 1; font-size: 13px; font-weight: 800; color: var(--gold); }
-    .setup-warning {
-      font-size: 11.5px;
-      color: #fde68a;
-      background: rgba(251, 191, 36, 0.14);
-      border: 1px solid rgba(251, 191, 36, 0.35);
-      padding: 8px 10px;
-      border-radius: 10px;
-      line-height: 1.4;
-    }
-
-    /* Battle Scoreboard dengan Avatar Anime */
-    .battle-board {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 6px;
-    }
-    .vs-badge {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #f59e0b, #ef4444);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 900;
-      font-style: italic;
-      box-shadow: 0 0 15px rgba(239, 68, 68, 0.55);
-      border: 2px solid #fff;
-      z-index: 2;
-    }
-    .fighter-card {
-      background: var(--glass);
-      border: 2px solid var(--glass-border);
-      border-radius: 16px;
-      padding: 9px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.25s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    .fighter-card.p2-card {
-      flex-direction: row-reverse;
-      text-align: right;
-    }
-    .fighter-card.active-p1 {
-      border-color: var(--cyan);
-      box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
-      background: rgba(14, 165, 233, 0.14);
-    }
-    .fighter-card.active-p2 {
-      border-color: var(--pink);
-      box-shadow: 0 0 20px rgba(244, 114, 182, 0.35);
-      background: rgba(236, 72, 153, 0.14);
-    }
-    .fighter-card.winner {
-      border-color: var(--gold);
-      box-shadow: 0 0 26px rgba(251, 191, 36, 0.5);
-    }
-
-    .avatar-wrap {
-      width: 52px;
-      height: 52px;
-      flex-shrink: 0;
-      border-radius: 14px;
-      overflow: hidden;
-      border: 2px solid rgba(255, 255, 255, 0.35);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
-      transition: transform 0.2s;
-    }
-    .active-p1 .avatar-wrap, .active-p2 .avatar-wrap {
-      transform: scale(1.06);
-      border-color: #fff;
-    }
-    .avatar-svg { width: 100%; height: 100%; display: block; }
-    .avatar-svg .eyes-hype, .avatar-svg .eyes-shock, .avatar-svg .fx-sweat, .avatar-svg .fx-sparkle { display: none; }
-    .avatar-svg.mood-hype .eyes-normal { display: none; }
-    .avatar-svg.mood-hype .eyes-hype, .avatar-svg.mood-hype .fx-sparkle { display: block; }
-    .avatar-svg.mood-shock .eyes-normal { display: none; }
-    .avatar-svg.mood-shock .eyes-shock, .avatar-svg.mood-shock .fx-sweat { display: block; }
-
-    .fighter-info { flex: 1; min-width: 0; }
-    .fighter-name {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--text-sub);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-transform: uppercase;
-    }
-    .fighter-score {
-      font-size: 26px;
-      font-weight: 900;
-      line-height: 1.05;
-      margin: 2px 0 4px;
-    }
-    .fighter-score span { font-size: 11px; color: var(--text-sub); font-weight: 700; }
-
-    .hp-track {
-      width: 100%;
-      height: 7px;
-      background: rgba(0, 0, 0, 0.45);
-      border-radius: 99px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .hp-fill {
-      height: 100%;
-      width: 0%;
-      border-radius: 99px;
-      background: linear-gradient(90deg, #0ea5e9, #38bdf8, #a5f3fc);
-      transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .hp-fill.p2 {
-      background: linear-gradient(90deg, #f43f5e, #f472b6, #fde047);
-    }
-
-    /* Arena Dadu Sihir Anime */
-    .arena {
-      background: var(--glass);
-      border: 1.5px solid var(--glass-border);
-      backdrop-filter: blur(12px);
-      border-radius: 22px;
-      padding: 16px 14px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 10px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-    }
-
-    /* Speedlines saat roll angka besar */
-    .speed-lines {
-      position: absolute;
-      inset: -40%;
-      background: repeating-conic-gradient(
-        from 0deg,
-        rgba(255, 255, 255, 0.08) 0deg 4deg,
-        transparent 4deg 14deg
-      );
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s;
-    }
-    .arena.fever-fx .speed-lines {
-      opacity: 1;
-      animation: spinSlow 6s linear infinite;
-    }
-
-    .top-arena-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      z-index: 2;
-    }
-    .round-pill {
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      padding: 5px 13px;
-      border-radius: 99px;
-      font-size: 12.5px;
-      font-weight: 700;
-      color: var(--text-sub);
-    }
-    .round-pill strong { color: var(--gold); font-size: 16px; margin-left: 4px; }
-
-    .combo-pill {
-      display: none;
-      background: linear-gradient(135deg, #f59e0b, #ef4444);
-      color: #fff;
-      padding: 4px 10px;
-      border-radius: 99px;
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 0.4px;
-      box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
-      animation: pulseBadge 0.8s infinite alternate;
-    }
-    .combo-pill.show { display: inline-block; }
-    @keyframes pulseBadge {
-      from { transform: scale(1); }
-      to { transform: scale(1.08); }
-    }
-
-    /* Lingkaran Sihir + Dadu */
-    .dice-stage {
-      position: relative;
-      width: 146px;
-      height: 146px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2;
-    }
-    .magic-ring {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0.6;
-      animation: spinSlow 14s linear infinite;
-      pointer-events: none;
-    }
-    .arena.fever-fx .magic-ring {
-      opacity: 1;
-      animation: spinSlow 4s linear infinite;
-      filter: drop-shadow(0 0 10px #fbbf24);
-    }
-    @keyframes spinSlow {
-      to { transform: rotate(360deg); }
-    }
-
-    .dice-box {
-      width: 104px;
-      height: 104px;
-      background: linear-gradient(145deg, #38bdf8, #6366f1);
-      color: #ffffff;
-      border-radius: 26px;
-      border: 2.5px solid rgba(255, 255, 255, 0.55);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 68px;
-      line-height: 1;
-      font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols', sans-serif;
-      box-shadow:
-        0 12px 28px rgba(56, 189, 248, 0.42),
-        inset 0 3px 6px rgba(255, 255, 255, 0.55),
-        inset 0 -5px 10px rgba(0, 0, 0, 0.35);
-      user-select: none;
-      cursor: pointer;
-      position: relative;
-      z-index: 2;
-      transition: background 0.25s, transform 0.12s, box-shadow 0.25s;
-    }
-    .dice-box:active { transform: scale(0.93); }
-    .dice-box.p2-mode {
-      background: linear-gradient(145deg, #f472b6, #a855f7);
-      box-shadow:
-        0 12px 28px rgba(244, 114, 182, 0.45),
-        inset 0 3px 6px rgba(255, 255, 255, 0.55),
-        inset 0 -5px 10px rgba(0, 0, 0, 0.35);
-    }
-    .dice-box.bust {
-      background: linear-gradient(145deg, #fb7185, #be123c);
-      box-shadow: 0 12px 30px rgba(244, 63, 94, 0.65);
-      animation: bustShake 0.42s ease;
-    }
-    .dice-box.rolling { animation: rollTumble 0.26s infinite linear; }
-
-    .pop-float {
-      position: absolute;
-      top: -6px;
-      font-size: 16px;
-      font-weight: 900;
-      font-style: italic;
-      padding: 4px 12px;
-      border-radius: 99px;
-      border: 2px solid #fff;
-      pointer-events: none;
-      opacity: 0;
-      z-index: 5;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-      white-space: nowrap;
-    }
-    .pop-float.show { animation: floatUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-
-    .status-text {
-      font-size: 13.5px;
-      font-weight: 600;
-      min-height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1.35;
-      z-index: 2;
-      color: #f1f5f9;
-    }
-
-    /* Tombol Aksi */
-    .controls { display: grid; grid-template-columns: 1.35fr 1fr; gap: 10px; }
-    .btn-action {
-      border: 2px solid rgba(255, 255, 255, 0.25);
-      border-radius: 16px;
-      padding: 14px 10px;
-      font-size: 15px;
-      font-weight: 900;
-      cursor: pointer;
-      color: #ffffff;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-      transition: transform 0.1s, opacity 0.2s;
-    }
-    .btn-action:active:not(:disabled) { transform: scale(0.95); }
-    .btn-action:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none !important; }
-    .btn-roll {
-      background: linear-gradient(135deg, #0ea5e9, #6366f1);
-      box-shadow: 0 8px 22px rgba(99, 102, 241, 0.4);
-    }
-    .btn-hold {
-      background: linear-gradient(135deg, #10b981, #059669);
-      box-shadow: 0 8px 22px rgba(16, 185, 129, 0.4);
-    }
-    .btn-restart {
-      grid-column: 1 / -1;
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      color: var(--text-sub);
-      padding: 11px;
-      font-size: 13px;
-      font-weight: 700;
-      border-radius: 13px;
-      cursor: pointer;
-    }
-
-    .confetti {
-      position: fixed;
-      top: -20px;
-      font-size: 20px;
-      pointer-events: none;
-      z-index: 99;
-      animation: fallDown 2.2s linear forwards;
-    }
-
-    @keyframes rollTumble {
-      0% { transform: rotate(0deg) scale(1.05); }
-      25% { transform: rotate(14deg) scale(1.1); }
-      50% { transform: rotate(-14deg) scale(1.05); }
-      75% { transform: rotate(10deg) scale(1.1); }
-      100% { transform: rotate(0deg) scale(1.05); }
-    }
-    @keyframes bustShake {
-      0%, 100% { transform: translateX(0); }
-      20% { transform: translateX(-8px) rotate(-5deg); }
-      40% { transform: translateX(8px) rotate(5deg); }
-      60% { transform: translateX(-6px); }
-      80% { transform: translateX(6px); }
-    }
-    @keyframes floatUp {
-      0% { opacity: 0; transform: translateY(12px) scale(0.75); }
-      20% { opacity: 1; transform: translateY(-6px) scale(1.12); }
-      100% { opacity: 0; transform: translateY(-38px) scale(1); }
-    }
-    @keyframes fallDown {
-      to { transform: translateY(105vh) rotate(360deg); opacity: 0; }
-    }
-  </style>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Duel Dadu Anime</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root{--g:rgba(20,16,46,.76);--bd:rgba(255,255,255,.16);--s:#cbd5e1}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:linear-gradient(165deg,#160c2e,#24134d 48%,#0f172a);color:#fff;min-height:100vh;display:flex;justify-content:center;padding:calc(10px + var(--tg-safe-area-inset-top,0px)) 12px 18px;overflow-x:hidden}
+.sky{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.sak{position:absolute;top:-30px;opacity:.55;animation:sFall linear infinite}
+@keyframes sFall{0%{transform:translateY(-20px) rotate(0);opacity:0}15%{opacity:.65}100%{transform:translateY(105vh) translateX(40px) rotate(360deg);opacity:0}}
+.app{width:100%;max-width:440px;display:flex;flex-direction:column;gap:9px;position:relative;z-index:1}
+.app.shake{animation:aShk .36s ease}
+@keyframes aShk{0%,100%{transform:translate(0)}25%{transform:translate(-6px,3px)}50%{transform:translate(6px,-3px)}75%{transform:translate(-4px,2px)}}
+.hdr,.tabs,.onl,.arena{background:var(--g);border:1.5px solid var(--bd);backdrop-filter:blur(12px);border-radius:16px}
+.hdr{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px}
+.hdr h2{font-size:15px;font-weight:800;background:linear-gradient(90deg,#38bdf8,#f472b6,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr p{font-size:11px;color:var(--s);margin-top:1px}
+.hr{display:flex;align-items:center;gap:7px}
+.pill{background:rgba(244,114,182,.16);border:1px solid rgba(244,114,182,.45);color:#fbcfe8;padding:4px 8px;border-radius:10px;font-size:11px;font-weight:800;line-height:1.3;text-align:right}
+.snd{width:36px;height:36px;border-radius:11px;border:1.5px solid var(--bd);background:rgba(255,255,255,.1);color:#fff;font-size:17px;cursor:pointer}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:4px;border-radius:14px}
+.tab{border:none;background:transparent;color:var(--s);font-size:12px;font-weight:800;padding:8px 4px;border-radius:10px;cursor:pointer}
+.tab.active{background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;box-shadow:0 4px 12px rgba(236,72,153,.4)}
+.onl{display:none;padding:10px;flex-direction:column;gap:8px}.onl.show{display:flex}
+.row{display:flex;gap:7px;align-items:center}
+.inp{flex:1;min-width:0;padding:9px;border-radius:10px;border:1px solid var(--bd);background:rgba(0,0,0,.4);color:#fff;font-size:14px;font-weight:800;text-align:center;letter-spacing:3px}
+.inp::placeholder{letter-spacing:0;font-weight:500;color:#94a3b8}
+.bm{border:none;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;white-space:nowrap}
+.bc{background:linear-gradient(135deg,#10b981,#059669)}.bj{background:linear-gradient(135deg,#0ea5e9,#6366f1)}
+.bs{background:rgba(56,189,248,.22);border:1px solid #38bdf8;color:#38bdf8}.bl{background:rgba(251,113,133,.22);border:1px solid #fb7185;color:#fb7185}
+.warn{font-size:11.5px;color:#fde68a;background:rgba(251,191,36,.14);border:1px solid rgba(251,191,36,.35);padding:8px;border-radius:10px;line-height:1.4}
+.brd{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}
+.vs{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:900;font-style:italic;border:2px solid #fff;z-index:2}
+.fc{background:var(--g);border:2px solid var(--bd);border-radius:16px;padding:8px;display:flex;align-items:center;gap:7px;transition:.25s}
+.fc.p2{flex-direction:row-reverse;text-align:right}
+.fc.ap1{border-color:#38bdf8;box-shadow:0 0 18px rgba(56,189,248,.35);background:rgba(14,165,233,.15)}
+.fc.ap2{border-color:#f472b6;box-shadow:0 0 18px rgba(244,114,182,.35);background:rgba(236,72,153,.15)}
+.fc.win{border-color:#fbbf24;box-shadow:0 0 22px rgba(251,191,36,.5)}
+.avw{width:48px;height:48px;flex-shrink:0;border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,.35)}
+.av{width:100%;height:100%;display:block}
+.av .eh,.av .es,.av .fx{display:none}.av.mh .en{display:none}.av.mh .eh,.av.mh .fxs{display:block}.av.ms .en{display:none}.av.ms .es,.av.ms .fxw{display:block}
+.fi{flex:1;min-width:0}.fn{font-size:10.5px;font-weight:800;color:var(--s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+.fs{font-size:24px;font-weight:900;line-height:1.05;margin:2px 0 4px}.fs span{font-size:11px;color:var(--s)}
+.ht{width:100%;height:6px;background:rgba(0,0,0,.45);border-radius:99px;overflow:hidden}
+.hf{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#0ea5e9,#38bdf8,#a5f3fc);transition:width .35s}
+.hf.p2{background:linear-gradient(90deg,#f43f5e,#f472b6,#fde047)}
+.arena{padding:15px 14px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;position:relative;overflow:hidden;border-radius:20px}
+.spd{position:absolute;inset:-40%;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.08) 0deg 4deg,transparent 4deg 14deg);opacity:0;pointer-events:none}
+.arena.fev .spd{opacity:1;animation:spin 6s linear infinite}
+.abar{display:flex;align-items:center;gap:8px;z-index:2}
+.rp{background:rgba(0,0,0,.35);border:1px solid var(--bd);padding:5px 12px;border-radius:99px;font-size:12.5px;font-weight:700;color:var(--s)}.rp strong{color:#fbbf24;font-size:15px}
+.cp{display:none;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;padding:4px 9px;border-radius:99px;font-size:11px;font-weight:900}.cp.show{display:inline-block}
+.dst{position:relative;width:138px;height:138px;display:flex;justify-content:center;align-items:center;z-index:2}
+.rng{position:absolute;inset:0;width:100%;height:100%;opacity:.65;animation:spin 14s linear infinite;pointer-events:none}
+.arena.fev .rng{opacity:1;animation:spin 4s linear infinite;filter:drop-shadow(0 0 10px #fbbf24)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dbx{width:98px;height:98px;background:linear-gradient(145deg,#38bdf8,#6366f1);color:#fff;border-radius:25px;border:2.5px solid rgba(255,255,255,.55);display:flex;justify-content:center;align-items:center;font-size:64px;line-height:1;font-family:'Segoe UI Symbol','Apple Symbols','Noto Sans Symbols',sans-serif;box-shadow:0 12px 26px rgba(56,189,248,.42),inset 0 3px 6px rgba(255,255,255,.55);user-select:none;cursor:pointer;z-index:2;transition:.2s}
+.dbx:active{transform:scale(.93)}.dbx.p2m{background:linear-gradient(145deg,#f472b6,#a855f7);box-shadow:0 12px 26px rgba(244,114,182,.45)}
+.dbx.bust{background:linear-gradient(145deg,#fb7185,#be123c);animation:bShk .4s ease}.dbx.roll{animation:rTmb .25s infinite linear}
+.pop{position:absolute;top:-6px;font-size:15px;font-weight:900;font-style:italic;color:#fff;padding:3px 11px;border-radius:99px;border:2px solid #fff;pointer-events:none;opacity:0;z-index:5;white-space:nowrap}
+.pop.show{animation:fUp .85s ease forwards}
+.sts{font-size:13.5px;font-weight:600;min-height:36px;display:flex;align-items:center;justify-content:center;line-height:1.35;z-index:2}
+.ctr{display:grid;grid-template-columns:1.35fr 1fr;gap:9px}
+.ba{border:2px solid rgba(255,255,255,.25);border-radius:15px;padding:14px 10px;font-size:15px;font-weight:900;cursor:pointer;color:#fff}
+.ba:active:not(:disabled){transform:scale(.95)}.ba:disabled{opacity:.35;cursor:not-allowed}
+.br{background:linear-gradient(135deg,#0ea5e9,#6366f1);box-shadow:0 8px 18px rgba(99,102,241,.4)}.bh{background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 8px 18px rgba(16,185,129,.4)}
+.brs{grid-column:1/-1;background:var(--g);border:1px solid var(--bd);color:var(--s);padding:10px;font-size:13px;font-weight:700;border-radius:13px;cursor:pointer}
+.cnf{position:fixed;top:-20px;font-size:20px;pointer-events:none;z-index:99;animation:cFl 2.1s linear forwards}
+@keyframes rTmb{0%{transform:rotate(0) scale(1.05)}25%{transform:rotate(14deg) scale(1.1)}50%{transform:rotate(-14deg) scale(1.05)}75%{transform:rotate(10deg) scale(1.1)}100%{transform:rotate(0) scale(1.05)}}
+@keyframes bShk{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px) rotate(-5deg)}50%{transform:translateX(8px) rotate(5deg)}75%{transform:translateX(-6px)}}
+@keyframes fUp{0%{opacity:0;transform:translateY(12px) scale(.75)}20%{opacity:1;transform:translateY(-6px) scale(1.12)}100%{opacity:0;transform:translateY(-36px) scale(1)}}
+@keyframes cFl{to{transform:translateY(105vh) rotate(360deg);opacity:0}}
+</style>
 </head>
 <body>
-  <!-- Latar Sakura Anime -->
-  <div class="anime-sky" id="animeSky"></div>
-
-  <div class="app" id="appRoot">
-    <!-- Header -->
-    <div class="header">
-      <div class="title-wrap">
-        <h2 id="greeting">✨ Duel Dadu Anime</h2>
-        <p>Target 50 Poin • Ketuk dadu untuk lempar</p>
-      </div>
-      <div class="header-right">
-        <div class="stats-pill">
-          🏆 <span id="winCount">0</span> Menang<br />
-          🎮 <span id="playCount">0</span> Main
-        </div>
-        <button class="btn-sound" id="btnSound" type="button" onclick="toggleSound()">🔊</button>
-      </div>
+<div class="sky" id="sky"></div>
+<div class="app" id="app">
+  <div class="hdr">
+    <div><h2 id="greet">✨ Duel Dadu Anime</h2><p>Target 50 Poin • Ketuk dadu untuk lempar</p></div>
+    <div class="hr">
+      <div class="pill">🏆 <span id="wCnt">0</span> Menang<br/>🎮 <span id="pCnt">0</span> Main</div>
+      <button class="snd" id="bSnd" type="button" onclick="tSnd()">🔊</button>
     </div>
-
-    <!-- Pemilih Mode -->
-    <div class="mode-tabs">
-      <button class="mode-tab active" id="tabBot" type="button" onclick="switchMode('bot')">🤖 Lawan Bot</button>
-      <button class="mode-tab" id="tabLocal" type="button" onclick="switchMode('local')">👥 2P (1 HP)</button>
-      <button class="mode-tab" id="tabOnline" type="button" onclick="switchMode('online')">🌐 Online</button>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tBot" type="button" onclick="swMode('bot')">🤖 Lawan Bot</button>
+    <button class="tab" id="tLoc" type="button" onclick="swMode('loc')">👥 2P (1 HP)</button>
+    <button class="tab" id="tOnl" type="button" onclick="swMode('onl')">🌐 Online</button>
+  </div>
+  <div class="onl" id="onlP">
+    <div id="fbW" class="warn" style="display:none">⚙️ Isi <code>FIREBASE_DB_URL</code> di kode untuk mabar beda HP, atau pilih <b>👥 2P (1 HP)</b>!</div>
+    <div id="lob" class="row"><button class="bm bc" type="button" onclick="mkRoom()">+ Buat Room</button><input class="inp" id="rIn" type="tel" maxlength="4" placeholder="Kode 4 angka"/><button class="bm bj" type="button" onclick="jnRoom()">Gabung</button></div>
+    <div id="rmC" class="row" style="display:none"><div style="flex:1;font-size:13px;font-weight:800;color:#fbbf24">Room: <span id="rCode">----</span></div><button class="bm bs" type="button" onclick="shRoom()">📤 Ajak</button><button class="bm bl" type="button" onclick="lvRoom(1)">Keluar</button></div>
+  </div>
+  <div class="brd">
+    <div class="fc ap1" id="p1C"><div class="avw"><svg class="av" id="p1Av" viewBox="0 0 100 100"></svg></div><div class="fi"><div class="fn" id="p1N">SORA</div><div class="fs"><b id="p1S">0</b><span>/50</span></div><div class="ht"><div class="hf" id="p1B"></div></div></div></div>
+    <div class="vs">VS</div>
+    <div class="fc p2" id="p2C"><div class="avw"><svg class="av" id="p2Av" viewBox="0 0 100 100"></svg></div><div class="fi"><div class="fn" id="p2N">KITSUNE</div><div class="fs"><b id="p2S">0</b><span>/50</span></div><div class="ht"><div class="hf p2" id="p2B"></div></div></div></div>
+  </div>
+  <div class="arena" id="ar">
+    <div class="spd"></div>
+    <div class="abar"><div class="rp">Poin Ronde: <strong id="rS">0</strong></div><div class="cp" id="cP">🔥</div></div>
+    <div class="dst">
+      <svg class="rng" viewBox="0 0 140 140"><circle cx="70" cy="70" r="64" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="1.5" stroke-dasharray="8 6"/><circle cx="70" cy="70" r="55" fill="none" stroke="rgba(244,114,182,.5)" stroke-width="1.5"/><polygon points="70,8 124,101 16,101" fill="none" stroke="rgba(56,189,248,.35)" stroke-width="1.2"/><polygon points="70,132 16,39 124,39" fill="none" stroke="rgba(251,191,36,.35)" stroke-width="1.2"/></svg>
+      <div class="pop" id="pop"></div>
+      <div class="dbx" id="dBx" onclick="tapD()">🎲</div>
     </div>
-
-    <!-- Panel Online -->
-    <div class="online-panel" id="onlinePanel">
-      <div id="firebaseWarning" class="setup-warning" style="display:none;">
-        ⚙️ <b>Database Online belum diisi.</b> Tempel <code>FIREBASE_DB_URL</code> di kode <code>index.html</code> untuk mabar beda HP, atau pilih <b>👥 2P (1 HP)</b> untuk langsung main berdua!
-      </div>
-      <div id="lobbyControls" class="online-row">
-        <button class="btn-mini btn-create" type="button" onclick="createOnlineRoom()">+ Buat Room</button>
-        <input class="input-code" id="roomCodeInput" type="tel" maxlength="4" placeholder="Kode 4 angka" />
-        <button class="btn-mini btn-join" type="button" onclick="joinOnlineRoom()">Gabung</button>
-      </div>
-      <div id="roomControls" class="online-row" style="display:none;">
-        <div class="room-badge">Room: <span id="activeRoomCode">----</span></div>
-        <button class="btn-mini btn-share" type="button" onclick="shareOnlineRoom()">📤 Ajak Teman</button>
-        <button class="btn-mini btn-leave" type="button" onclick="leaveOnlineRoom(true)">Keluar</button>
-      </div>
-    </div>
-
-    <!-- Papan Duel Anime (P1 vs P2) -->
-    <div class="battle-board">
-      <!-- Fighter 1: Sora -->
-      <div class="fighter-card active-p1" id="p1Card">
-        <div class="avatar-wrap">
-          <svg class="avatar-svg" id="p1Avatar" viewBox="0 0 100 100">
-            <defs>
-              <linearGradient id="p1Bg" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#0284c7" />
-                <stop offset="100%" stop-color="#312e81" />
-              </linearGradient>
-              <linearGradient id="hairBlue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#38bdf8" />
-                <stop offset="100%" stop-color="#1d4ed8" />
-              </linearGradient>
-            </defs>
-            <rect width="100" height="100" fill="url(#p1Bg)" />
-            <!-- Rambut Belakang & Bahu -->
-            <path d="M18 58 Q16 20 50 15 Q84 20 82 58 L86 88 L14 88 Z" fill="url(#hairBlue)" />
-            <path d="M22 96 Q26 75 50 75 Q74 75 78 96 Z" fill="#0f172a" />
-            <path d="M35 76 L50 89 L65 76" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" />
-            <rect x="44" y="67" width="12" height="12" rx="4" fill="#fde2cc" />
-            <!-- Wajah -->
-            <path d="M29 45 Q29 24 50 24 Q71 24 71 45 Q71 64 50 72 Q29 64 29 45 Z" fill="#ffe8d6" />
-            <ellipse cx="36" cy="56" rx="4.5" ry="2.2" fill="#fb7185" opacity="0.55" />
-            <ellipse cx="64" cy="56" rx="4.5" r
+    <div class="sts" id="sts">Giliranmu! Ketuk dadu atau tekan Lempar Dadu!</div>
+  </div>
+  <div class="ctr">
+    <button class="ba br" id="bR" type="button" onclick="tapR()">🎲 Lempar Dadu</button>
+    <button class="ba bh" id="bH" type="button" onclick="tapH()" disabled>💾 Simpan Poin</button>
+    <button class="brs" type="button" onclick="tapRe()">🔄 Mulai Ulang Duel</button>
+  </div>
+</div>
+<script>
+const FIREBASE_DB_URL="";
+const TGT=50,EM={1:'⚀',2:'⚁',3:'⚂',4:'⚃',5:'⚄',6:'⚅'},$=id=>document.getElementById(id);
+function mkAv(id,b1,b2,h1,h2,ec,cat){return `<defs><linearGradient id="g${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${b1}"/><stop offset="100%" stop-color="${b2}"/></linearGradient><linearGradient id="h${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${h1}"/><stop offset="100%" stop-color="${h2}"/></linearGradient></defs><rect width="100" height="100" fill="url(#g${id})"/>`+(cat?`<path d="M27 33L20 10L42 23ZM73 33L80 10L58 23Z" fill="url(#h${id})"/><path d="M28 29L24 15L37 24ZM72 29L76 15L63 24Z" fill="#fdf2f8"/>`:'')+`<path d="M18 60Q16 20 50 16Q84 20 82 60L86 90H14Z" fill="url(#h${id})"/><path d="M22 96Q26 75 50 75Q74 75 78 96Z" fill="${cat?'#3b0764':'#0f172a'}"/><path d="M35 76L50 89L65 76" fill="none" stroke="${cat?'#fbbf24':'#38bdf8'}" stroke-width="3" stroke-linecap="round"/><rect x="44" y="67" width="12" height="12" rx="4" fill="#ffe4d6"/><path d="M29 45Q29 24 50 24Q71 24 71 45Q71 64 50 72Q29 64 29 45Z" fill="#ffecdc"/><ellipse cx="36" cy="56" rx="4.5" ry="2.2" fill="#fb7185" opacity=".55"/><ellipse cx="64" cy="56" rx="4.5" ry="2.2" fill="#fb7185" opacity=".55"/><g class="en"><ellipse cx="39" cy="48" rx="5" ry="5.8" fill="#fff"/><circle cx="39.5" cy="48.5" r="3.9" fill="${ec}"/><circle cx="39.5" cy="48.5" r="1.8" fill="#0f172a"/><circle cx="37.8" cy="46.5" r="1.4" fill="#fff"/><path d="M33 44.5Q39 39.5 45 44.5" stroke="#0f172a" stroke-width="2.3" fill="none" stroke-linecap="round"/><ellipse cx="61" cy="48" rx="5" ry="5.8" fill="#fff"/><circle cx="60.5" cy="48.5" r="3.9" fill="${ec}"/><circle cx="60.5" cy="48.5" r="1.8" fill="#0f172a"/><circle cx="58.8" cy="46.5" r="1.4" fill="#fff"/><path d="M55 44.5Q61 39.5 67 44.5" stroke="#0f172a" stroke-width="2.3" fill="none" stroke-linecap="round"/><path d="${cat?'M45 61Q47.5 63.5 50 61Q52.5 63.5 55 61':'M46 61Q50 64.5 54 61'}" stroke="#be6a6a" stroke-width="1.8" fill="none" stroke-linecap="round"/></g><g class="eh"><path d="M34 49Q39 42 44 49M56 49Q61 42 66 49" stroke="#0f172a" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M44 59Q50 68 56 59Z" fill="#f43f5e"/></g><g class="es"><path d="M35 44L43 48L35 52M65 44L57 48L65 52" stroke="#0f172a" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M44 62Q47 59 50 62Q53 65 56 62" stroke="#be6a6a" stroke-width="2" fill="none"/></g><path d="M25 45Q28 19 50 17Q72 19 75 45Q67 31 60 40Q53 28 48 41Q41 29 35 40Q30 32 25 45Z" fill="url(#h${id})"/><path d="M34 28Q50 22 66 28" stroke="#fff" stroke-width="2" opacity=".45" fill="none" stroke-linecap="round"/>`+(cat?'':`<path d="M50 18Q55 7 64 11Q57 14 52 19Z" fill="#38bdf8"/><text x="64" y="34" font-size="11" fill="#fde047">✦</text>`)+`<path class="fx fxw" d="M${cat?26:72} 34Q${cat?30:76} 41 ${cat?30:76} 44A4 4 0 1 1 ${cat?22:68} 44Q${cat?22:68} 41 ${cat?26:72} 34Z" fill="#38bdf8"/><text class="fx fxs" x="14" y="26" font-size="13" fill="#fde047">★</text>`}
+$('p1Av').innerHTML=mkAv(1,'#0284c7','#312e81','#38bdf8','#1d4ed8','#2563eb',0);$('p2Av').innerHTML=mkAv(2,'#db2777','#4c1d95','#f9a8d4','#ec4899','#f59e0b',1);
+(()=>{const s=$('sky'),ic=['🌸','✦','🌸','✨'];for(let i=0;i<12;i++){const e=document.createElement('div');e.className='sak';e.textContent=ic[i%4];e.style.left=(i*8%96)+'vw';e.style.fontSize=(12+(i%3)*5)+'px';e.style.animationDuration=(7+(i%4)*2)+'s';e.style.animationDelay=-(i*1.1)+'s';s.appendChild(e);}})();
+let tg=null,tgN='Sora';try{tg=window.Telegram&&window.Telegram.WebApp;if(tg){tg.ready();tg.expand();tg.disableVerticalSwipes&&tg.disableVerticalSwipes();tg.setHeaderColor&&tg.setHeaderColor('#160c2e');tg.setBackgroundColor&&tg.setBackgroundColor('#130b29');const u=tg.initDataUnsafe&&tg.initDataUnsafe.user;if(u&&u.first_name){tgN=u.first_name;$('greet').textContent='✨ Duel Anime: '+tgN;}}}catch(e){}
+const gL=k=>{try{return localStorage.getItem(k)}catch(e){return null}},sL=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+let ax=null,gn=null,nb=null,son=gL('dice_snd')!=='false';$('bSnd').textContent=son?'🔊':'🔇';
+function eAud(){if(!son)return null;try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;if(!ax){ax=new A();const c=ax.createDynamicsCompressor();c.threshold.setValueAtTime(-18,ax.currentTime);c.ratio.setValueAtTime(6,ax.currentTime);gn=ax.createGain();gn.gain.setValueAtTime(.95,ax.currentTime);gn.connect(c);c.connect(ax.destination);nb=ax.createBuffer(1,Math.floor(ax.sampleRate*.1),ax.sampleRate);const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}if(ax.state==='suspended')ax.resume().catch(()=>{});return ax;}catch(e){return null}}
+window.addEventListener('pointerdown',()=>eAud(),{once:true,passive:true});
+function tn(f,d,t='triangle',v=.35,dl=0){const a=eAud();if(!a||!gn)return;try{const n=a.currentTime+dl,o=a.createOscillator(),g=a.createGain();o.type=t;o.frequency.setValueAtTime(f,n);g.gain.setValueAtTime(.001,n);g.gain.linearRampToValueAtTime(v,n+.01);g.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(g);g.connect(gn);o.start(n);o.stop(n+d+.02);}catch(e){}}
+function sTck(){const a=eAud();if(!a||!gn||!nb)return;try{const n=a.currentTime,s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();s.buffer=nb;f.type='bandpass';f.frequency.setValueAtTime(1200+Math.random()*900,n);g.gain.setValueAtTime(.45,n);g.gain.exponentialRampToValueAtTime(.005,n+.05);s.connect(f);f.connect(g);g.connect(gn);s.start(n);s.stop(n+.055);tn(600+Math.random()*280,.04,'triangle',.36);}catch(e){}}
+function sLnd(v,st=1){const b=540+v*85+Math.min(st-1,4)*55;tn(b,.14,'triangle',.42);tn(b*1.5,.14,'sine',.28,.03);if(v>=5)tn(b*2,.16,'sine',.22,.07)}
+function sHld(){tn(880,.11,'triangle',.42);tn(1174,.12,'triangle',.42,.08);tn(1568,.22,'sine',.45,.16)}
+function sBst(){const a=eAud();if(!a||!gn)return;try{const n=a.currentTime,o=a.createOscillator(),f=a.createBiquadFilter(),g=a.createGain();o.type='sawtooth';o.frequency.setValueAtTime(320,n);o.frequency.exponentialRampToValueAtTime(95,n+.38);f.type='lowpass';f.frequency.setValueAtTime(1150,n);g.gain.setValueAtTime(.45,n);g.gain.exponentialRampToValueAtTime(.001,n+.4);o.connect(f);f.connect(g);g.connect(gn);o.start(n);o.stop(n+.42);}catch(e){}}
+function sWin(){[523,659,784,1046,1318,1568].forEach((n,i)=>tn(n,.24,'triangle',.42,i*.08))}
+function sLos(){[440,349,293,220].forEach((n,i)=>tn(n,.26,'triangle',.38,i*.12))}
+function tSnd(){son=!son;sL('dice_snd',son);$('bSnd').textContent=son?'🔊':'🔇';if(son){eAud();tn(880,.1);}hap('impact','light')}
+function hap(t,s){try{tg&&tg.HapticFeedback&&tg.HapticFeedback[t==='impact'?'impactOccurred':'notificationOccurred'](s||'medium')}catch(e){}}
+let mT={1:0,2:0};function mood(p,m,ms=1300){const e=$(p===1?'p1Av':'p2Av');if(!e)return;clearTimeout(mT[p]);e.classList.remove('mh','ms');if(m==='h')e.classList.add('mh');if(m==='s')e.classList.add('ms');if(ms>0&&m!=='n')mT[p]=setTimeout(()=>{if(!over)e.classList.remove('mh','ms')},ms)}
+function shk(){const a=$('app');a.classList.remove('shake');void a.offsetWidth;a.classList.add('shake')}
+let st={w:0,p:0};
+function ldSt(){try{if(tg&&tg.initData&&tg.isVersionAtLeast&&tg.isVersionAtLeast('6.9')&&tg.CloudStorage){tg.CloudStorage.getItem('dd_st',(e,v)=>{if(!e&&v){try{st=JSON.parse(v)}catch(x){}}rSt()});return;}}catch(e){}const s=gL('dd_st');if(s){try{st=JSON.parse(s)}catch(e){}}rSt()}
+function svSt(){const p=JSON.stringify(st);try{if(tg&&tg.initData&&tg.isVersionAtLeast&&tg.isVersionAtLeast('6.9')&&tg.CloudStorage)tg.CloudStorage.setItem('dd_st',p);else sL('dd_st',p);}catch(e){sL('dd_st',p)}rSt()}
+function rSt(){$('wCnt').textContent=st.w;$('pCnt').textContent=st.p}
+let mode='bot',p1=0,p2=0,rS=0,str=0,trn=1,rol=false,over=false,gid=0,rI=null,rT=null,bT=null;
+let db=null,myId='p_'+Math.random().toString(36).slice(2,9),rCd=null,rRf=null,myRl=0,rDt=null,lR=0,lH=0,lRe=0;
+function fb(){if(db)return db;if(!FIREBASE_DB_URL.trim()||typeof firebase==='undefined')return null;try{if(!firebase.apps.length)firebase.initializeApp({databaseURL:FIREBASE_DB_URL.trim()});return(db=firebase.database())}catch(e){return null}}
+function d6(){try{if(window.crypto&&window.crypto.getRandomValues){const a=new Uint32Array(1),m=Math.floor(0x100000000/6)*6;let r;do{window.crypto.getRandomValues(a);r=a[0]}while(r>=m);return(r%6)+1}}catch(e){}return Math.floor(Math.random()*6)+1}
+function pop(t,bg){const p=$('pop');p.textContent=t;p.style.background=bg;p.classList.remove('show');void p.offsetWidth;p.classList.add('show')}
+function cnf(){['🌸','🎉','⭐','💎','✨'].forEach(ic=>{for(let j=0;j<4;j++){const e=document.createElement('div');e.className='cnf';e.textContent=ic;e.style.left=(Math.random()*94)+'vw';e.style.animationDuration=(1.4+Math.random())+'s';e.style.animationDelay=(Math.random()*.3)+'s';document.body.appendChild(e);setTimeout(()=>e.remove(),2800)}})}
+function sts(m){$('sts').textContent=m}
+function swMode(m){if(mode===m)return;lvRoom(0);mode=m;$('tBot').classList.toggle('active',m==='bot');$('tLoc').classList.toggle('active',m==='loc');$('tOnl').classList.toggle('active',m==='onl');$('onlP').classList.toggle('show',m==='onl');if(m==='onl'){const ok=!!fb();$('fbW').style.display=ok?'none':'block';$('lob').style.display=ok?'flex':'none';$('rmC').style.display='none';}rstLoc(0)}
+function anim(id,frc,cb){clearInterval(rI);clearTimeout(rT);rol=true;ui();const b=$('dBx');b.classList.remove('bust');b.classList.add('roll');sTck();rI=setInterval(()=>{if(id!==gid){clearInterval(rI);return}b.textContent=EM[d6()];sTck()},75);rT=setTimeout(()=>{clearInterval(rI);rI=rT=null;if(id!==gid)return;const res=frc||d6();b.classList.remove('roll');b.textContent=EM[res];rol=false;try{cb(res)}finally{ui()}},420)}
+function tapR(){if(mode==='onl'){if(!rDt)return;if(rDt.winner)rstOnl();else onlRoll();return}if(over)rstLoc(1);else locRoll()}
+function tapD(){if(rol)return;if(mode==='onl'){if(!rDt||!rDt.p2Id)return;if(rDt.winner)rstOnl();else if(rDt.turn===myRl)onlRoll();return}if(over)rstLoc(1);else if(!(mode==='bot'&&trn===2))locRoll()}
+function tapH(){mode==='onl'?onlHold():locHold()}
+function tapRe(){if(mode==='onl'){if(rDt)rstOnl()}else rstLoc(0)}
+function locRoll(){if(rol||over||(mode==='bot'&&trn===2))return;const id=gid,ap=trn,nm=ap===1?(mode==='bot'?tgN:'Pemain 1'):'Pemain 2';eAud();hap('impact','medium');anim(id,null,v=>{if(id!==gid)return;if(v===1){$('dBx').classList.add('bust');sBst();hap('notify','error');shk();mood(ap,'s',1400);pop('YABAI!! ZONK!','linear-gradient(135deg,#f43f5e,#be123c)');rS=0;str=0;trn=ap===1?2:1;if(mode==='bot'){sts('Yabai! Keluar ⚀ (1). Giliran Kitsune...');ui();bT=setTimeout(()=>botGo(id),1000)}else{sts(nm+' kena ⚀ (1)! Giliran Pemain '+trn+'!');ui()}}else{str++;sLnd(v,str);if(v>=5||str>=3)mood(ap,'h',1200);pop(v===6?'SUGOI!! +6 ★':(v===5?'NICE! +5':'+'+v),ap===1?'linear-gradient(135deg,#0ea5e9,#6366f1)':'linear-gradient(135deg,#ec4899,#a855f7)');rS+=v;sts(nm+' dapat '+EM[v]+' (+'+v+')! Lempar lagi atau Simpan?');ui()}})}
+function locHold(){if(rol||over||!rS||(mode==='bot'&&trn===2))return;const id=gid;eAud();sHld();hap('impact','light');mood(trn,'h',1000);pop('SAFE! +'+rS,'linear-gradient(135deg,#10b981,#059669)');if(trn===1)p1+=rS;else p2+=rS;rS=0;str=0;if(p1>=TGT||p2>=TGT){endLoc(p1>=TGT?1:2);return}trn=trn===1?2:1;if(mode==='bot'){sts('Poin aman! Giliran Kitsune-Chan...');ui();bT=setTimeout(()=>botGo(id),850)}else{sts('Poin aman! Giliran Pemain '+trn+'.');ui()}}
+function botGo(id){if(id!==gid||mode!=='bot'||trn!==2||over)return;anim(id,null,v=>{if(id!==gid||over)return;if(v===1){$('dBx').classList.add('bust');sBst();shk();mood(2,'s',1400);mood(1,'h',1000);pop('KITSUNE ZONK!','linear-gradient(135deg,#f43f5e,#be123c)');rS=0;str=0;trn=1;sts('Kitsune kena ⚀ (1)! Giliranmu!');ui();return}str++;sLnd(v,str);if(v>=5)mood(2,'h',1000);pop('+'+v,'linear-gradient(135deg,#ec4899,#a855f7)');rS+=v;ui();if(p2+rS>=TGT){sts('Kitsune menyimpan poin!');bT=setTimeout(()=>{if(id!==gid)return;sHld();p2+=rS;rS=0;str=0;endLoc(2)},700);return}if(rS>=(p1>=38?18:13)){sts('Kitsune memilih Simpan Poin.');bT=setTimeout(()=>{if(id!==gid)return;sHld();pop('SAFE +'+rS,'linear-gradient(135deg,#10b981,#059669)');p2+=rS;rS=0;str=0;trn=1;sts('Giliranmu! Ketuk dadu!');ui()},800)}else{sts('Kitsune dapat '+EM[v]+' (+'+v+'), melempar lagi...');bT=setTimeout(()=>botGo(id),850)}})}
+function endLoc(w){over=true;str=0;st.p++;if(w===1){st.w++;sWin();cnf();hap('notify','success');mood(1,'h',0);mood(2,'s',0);$('p1C').classList.add('win');sts('🎉 VICTORY! '+(mode==='bot'?tgN:'Pemain 1').toUpperCase()+' menang ('+p1+' - '+p2+')!')}else{if(mode==='loc'){sWin();cnf()}else sLos();hap('notify','warning');mood(2,'h',0);mood(1,'s',0);$('p2C').classList.add('win');sts('🏆 '+(mode==='bot'?'Kitsune-Chan':'Pemain 2')+' menang ('+p2+' - '+p1+')!')}svSt();ui()}
+function rstLoc(auto=0){gid++;clearInterval(rI);clearTimeout(rT);clearTimeout(bT);rI=rT=bT=null;p1=0;p2=0;rS=0;str=0;trn=1;rol=false;over=false;const b=$('dBx');b.classList.remove('roll','bust','p2m');b.textContent='🎲';$('p1C').classList.remove('win');$('p2C').classList.remove('win');mood(1,'n',0);mood(2,'n',0);sts(mode==='bot'?'Duel Anime vs Kitsune dimulai! Ketuk dadu!':(mode==='loc'?'Mode 2P (1 HP) siap! Giliran Pemain 1.':'Buat Room atau masukkan Kode 4 angka.'));ui();if(auto&&mode!=='onl')locRoll()}
+function mkRoom(){const d=fb();if(!d)return;eAud();const c=String(Math.floor(1000+Math.random()*9000));d.ref('rooms/'+c).set({p1Name:tgN,p1Id:myId,p2Name:'',p2Id:'',p1Score:0,p2Score:0,roundScore:0,turn:1,lastDie:0,rollSeq:0,holdSeq:0,resetSeq:0,winner:0,status:'Menunggu teman masuk Room '+c+'...'}).then(()=>att(c,1)).catch(()=>sts('❌ Gagal buat room.'))}
+function jnRoom(){const d=fb();if(!d)return;eAud();const c=($('rIn').value||'').trim();if(!/^\d{4}$/.test(c)){sts('Masukkan kode 4 angka.');return}const r=d.ref('rooms/'+c);r.once('value').then(s=>{const v=s.val();if(!v){sts('❌ Room '+c+' tidak ada.');return}if(v.p2Id&&v.p2Id!==myId&&v.p1Id!==myId){sts('❌ Room penuh.');return}const rl=v.p1Id===myId?1:2;if(rl===2&&!v.p2Id)r.update({p2Name:tgN,p2Id:myId,status:'🔥 '+tgN+' bergabung! Giliran '+v.p1Name+'.'}).then(()=>att(c,2));else att(c,rl)}).catch(()=>sts('❌ Gagal gabung.'))}
+function att(c,rl){if(rRf)rRf.off();gid++;rCd=c;myRl=rl;lR=lH=lRe=0;$('lob').style.display='none';$('rmC').style.display='flex';$('rCode').textContent=c;rRf=db.ref('rooms/'+c);rRf.on('value',s=>{const v=s.val();if(v)onRm(v)})}
+function lvRoom(rs=1){if(rRf){rRf.off();rRf=null}rCd=null;myRl=0;rDt=null;if(mode==='onl'){const ok=!!fb();$('lob').style.display=ok?'flex':'none';$('rmC').style.display='none';if(rs)rstLoc(0)}}
+function shRoom(){if(!rCd)return;const t='🎲 Ayo Duel Dadu Anime bareng aku! Kode Room: '+rCd;if(tg&&tg.openTelegramLink)tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent('https://t.me')+'&text='+encodeURIComponent(t));else if(navigator.clipboard){navigator.clipboard.writeText(rCd);sts('Kode '+rCd+' disalin!')}}
+function onRm(d){const id=gid;if(d.resetSeq&&d.resetSeq!==lRe){lRe=d.resetSeq;lR=d.rollSeq||0;lH=d.holdSeq||0;rDt=d;str=0;$('dBx').classList.remove('bust','roll');$('dBx').textContent='🎲';$('p1C').classList.remove('win');$('p2C').classList.remove('win');mood(1,'n',0);mood(2,'n',0);apRm(d);return}if(d.rollSeq&&d.rollSeq!==lR&&d.lastDie){lR=d.rollSeq;rDt=d;anim(id,d.lastDie,v=>{if(id!==gid||mode!=='onl')return;if(v===1){$('dBx').classList.add('bust');sBst();shk();str=0;pop('YABAI!! ZONK!','linear-gradient(135deg,#f43f5e,#be123c)')}else{str++;sLnd(v,str);pop(v===6?'SUGOI!! +6 ★':'+'+v,'linear-gradient(135deg,#0ea5e9,#6366f1)')}apRm(d)});return}if(d.holdSeq&&d.holdSeq!==lH){lH=d.holdSeq;str=0;sHld();pop('SAFE!','linear-gradient(135deg,#10b981,#059669)')}rDt=d;apRm(d)}
+function apRm(d){p1=d.p1Score||0;p2=d.p2Score||0;rS=d.roundScore||0;trn=d.turn||1;over=!!d.winner;sts(d.status||'');if(d.winner){$(d.winner===1?'p1C':'p2C').classList.add('win');mood(d.winner,'h',0);mood(d.winner===1?2:1,'s',0);if(d.winner===myRl){sWin();cnf();hap('notify','success')}else{sLos();hap('notify','warning')}}ui()}
+function onlRoll(){if(!rRf||!rDt||!rDt.p2Id||rol||rDt.winner||rDt.turn!==myRl)return;eAud();hap('impact','medium');const v=d6(),me=myRl===1?rDt.p1Name:rDt.p2Name,ot=myRl===1?rDt.p2Name:rDt.p1Name;rRf.update(v===1?{lastDie:v,rollSeq:(rDt.rollSeq||0)+1,roundScore:0,turn:myRl===1?2:1,status:me+' kena ⚀ (1)! Giliran '+ot+'.'}:{lastDie:v,rollSeq:(rDt.rollSeq||0)+1,roundScore:(rDt.roundScore||0)+v,turn:myRl,status:me+' dapat '+EM[v]+' (+'+v+')!'})}
+function onlHold(){if(!rRf||!rDt||!rDt.p2Id||rol||rDt.winner||rDt.turn!==myRl||!rDt.roundScore)return;eAud();hap('impact','light');const me=myRl===1?rDt.p1Name:rDt.p2Name,ot=myRl===1?rDt.p2Name:rDt.p1Name,n1=myRl===1?(rDt.p1Score||0)+rDt.roundScore:(rDt.p1Score||0),n2=myRl===2?(rDt.p2Score||0)+rDt.roundScore:(rDt.p2Score||0),w=n1>=TGT?1:(n2>=TGT?2:0);rRf.update({p1Score:n1,p2Score:n2,roundScore:0,holdSeq:(rDt.holdSeq||0)+1,winner:w,turn:w?myRl:(myRl===1?2:1),status:w?'🎉 '+me.toUpperCase()+' MENANG ('+n1+' - '+n2+')!':me+' simpan poin! Giliran '+ot+'.'})}
+function rstOnl(){rRf&&rDt&&rRf.update({p1Score:0,p2Score:0,roundScore:0,turn:1,lastDie:0,winner:0,resetSeq:(rDt.resetSeq||0)+1,status:'Duel baru! Giliran '+rDt.p1Name+'.'})}
+function ui(){$('p1N').textContent=mode==='bot'?tgN:(mode==='loc'?'SORA (P1)':(rDt?rDt.p1Name:'PEMAIN 1'));$('p2N').textContent=mode==='bot'?'KITSUNE BOT':(mode==='loc'?'KITSUNE (P2)':(rDt&&rDt.p2Name?rDt.p2Name:'MENUNGGU...'));$('p1S').textContent=p1;$('p2S').textContent=p2;$('rS').textContent=rS;$('p1B').style.width=Math.min(100,p1/TGT*100)+'%';$('p2B').style.width=Math.min(100,p2/TGT*100)+'%';$('p1C').classList.toggle('ap1',!over&&trn===1);$('p2C').classList.toggle('ap2',!over&&trn===2);$('dBx').classList.toggle('p2m',!over&&trn===2);const cp=$('cP'),ar=$('ar');if(str>=2&&!over){cp.textContent=str>=3?'🔥 FEVER x'+str:'⚡ COMBO x2';cp.classList.add('show');ar.classList.toggle('fev',str>=3)}else{cp.classList.remove('show');ar.classList.remove('fev')}const bR=$('bR'),bH=$('bH');if(mode==='onl'){const ok=rDt&&rDt.p2Id;if(rDt&&rDt.winner){bR.textContent='🎲 Main Lagi';bR.disabled=false;bH.disabled=true}else{bR.textContent='🎲 Lempar Dadu';const myT=ok&&rDt.turn===myRl&&!rol;bR.disabled=!myT;bH.disabled=!myT||!rDt.roundScore}}else if(over){bR.textContent='🎲 Main Lagi';bR.disabled=false;bH.disabled=true}else{bR.textContent='🎲 Lempar Dadu';const bt=mode==='bot'&&trn===2;bR.disabled=rol||bt;bH.disabled=rol||bt||rS===0}}
+ldSt();ui();
+</script>
+</body>
+</html>
