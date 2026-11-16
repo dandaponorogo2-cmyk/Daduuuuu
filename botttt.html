@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Duel Dadu - Telegram Mini App</title>
+  <!-- SDK Resmi Telegram Mini Apps -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: var(--tg-theme-bg-color, #17212b);
+      --sec-bg-color: var(--tg-theme-secondary-bg-color, #232e3c);
+      --text-color: var(--tg-theme-text-color, #ffffff);
+      --hint-color: var(--tg-theme-hint-color, #8e9ba8);
+      --btn-color: var(--tg-theme-button-color, #3390ec);
+      --btn-text: var(--tg-theme-button-text-color, #ffffff);
+      --accent-green: #2ecc71;
+      --accent-red: #e74c3c;
+      --accent-gold: #f1c40f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: calc(14px + var(--tg-safe-area-inset-top, 0px)) 14px calc(20px + var(--tg-safe-area-inset-bottom, 0px));
+      overflow-x: hidden;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--sec-bg-color);
+      padding: 12px 16px;
+      border-radius: 14px;
+    }
+    .user-info h2 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .user-info p {
+      font-size: 12px;
+      color: var(--hint-color);
+      margin-top: 2px;
+    }
+    .stats-badge {
+      background: rgba(51, 144, 236, 0.16);
+      color: var(--btn-color);
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    /* Papan Skor */
+    .scoreboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .player-card {
+      background: var(--sec-bg-color);
+      border-radius: 14px;
+      padding: 14px;
+      border: 2px solid transparent;
+      transition: border-color 0.25s, transform 0.2s;
+      position: relative;
+    }
+    .player-card.active {
+      border-color: var(--btn-color);
+      transform: translateY(-2px);
+    }
+    .player-card.winner {
+      border-color: var(--accent-green);
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--hint-color);
+    }
+    .turn-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--btn-color);
+      display: none;
+    }
+    .player-card.active .turn-dot {
+      display: inline-block;
+      animation: pulse 1s infinite;
+    }
+    .score-num {
+      font-size: 34px;
+      font-weight: 800;
+      margin: 6px 0;
+      line-height: 1;
+    }
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(128, 128, 128, 0.2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--btn-color);
+      transition: width 0.3s ease;
+    }
+    .bot-fill {
+      background: var(--accent-gold);
+    }
+
+    /* Arena Dadu Tengah */
+    .arena {
+      background: var(--sec-bg-color);
+      border-radius: 18px;
+      padding: 22px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+    }
+    .round-pill {
+      background: rgba(128, 128, 128, 0.15);
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .round-pill strong {
+      color: var(--accent-gold);
+      font-size: 15px;
+    }
+    .dice-box {
+      width: 112px;
+      height: 112px;
+      background: var(--btn-color);
+      color: #ffffff;
+      border-radius: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 74px;
+      line-height: 1;
+      font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols', sans-serif;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      user-select: none;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .dice-box.bust {
+      background: var(--accent-red);
+    }
+    .dice-box.rolling {
+      animation: shake 0.32s infinite;
+    }
+    .status-text {
+      font-size: 14px;
+      font-weight: 500;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-color);
+      line-height: 1.4;
+    }
+
+    /* Tombol Kontrol */
+    .controls {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 10px;
+    }
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 15px 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    button:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .btn-roll {
+      background: var(--btn-color);
+      color: var(--btn-text);
+    }
+    .btn-hold {
+      background: var(--accent-green);
+      color: #ffffff;
+    }
+    .btn-restart {
+      grid-column: 1 / -1;
+      background: var(--sec-bg-color);
+      color: var(--text-color);
+      border: 1px solid rgba(128, 128, 128, 0.25);
+      padding: 12px;
+      font-size: 14px;
+    }
+
+    /* Aturan Singkat */
+    .rules {
+      background: var(--sec-bg-color);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--hint-color);
+      line-height: 1.5;
+    }
+    .rules b {
+      color: var(--text-color);
+    }
+
+    @keyframes shake {
+      0% { transform: rotate(0deg) scale(1.04); }
+      25% { transform: rotate(10deg) scale(1.06); }
+      50% { transform: rotate(-10deg) scale(1.04); }
+      75% { transform: rotate(8deg) scale(1.06); }
+      100% { transform: rotate(0deg) scale(1.04); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Header Profil Telegram -->
+    <div class="header">
+      <div class="user-info">
+        <h2 id="greeting">Halo, Pemain! 👋</h2>
+        <p>Target: Capai 50 poin lebih dulu</p>
+      </div>
+      <div class="stats-badge">
+        🏆 Menang: <span id="winCount">0</span><br />
+        🎮 Main: <span id="playCount">0</span>
+      </div>
+    </div>
+
+    <!-- Papan Skor -->
+    <div class="scoreboard">
+      <div class="player-card active" id="playerCard">
+        <div class="card-top">
+          <span id="playerLabel">KAMU</span>
+          <span class="turn-dot"></span>
+        </div>
+        <div class="score-num" id="playerScore">0</div>
+        <div class="progress-track">
+          <div class="progress-fill" id="playerBar"></div>
+        </div>
+      </div>
+
+      <div class="player-card" id="botCard">
+        <div class="card-top">
+          <span>BOT 🤖</span>
+          <span class="turn-dot"></span>
+        </div>
+        <div class="score-num" id="botScore">0</div>
+        <div class="progress-track">
+          <div class="progress-fill bot-fill" id="botBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arena Dadu -->
+    <div class="arena">
+      <div class="round-pill">
+        Poin Ronde Ini: <strong id="roundScore">0</strong>
+      </div>
+
+      <div class="dice-box" id="diceBox">🎲</div>
+
+      <div class="status-text" id="statusText">
+        Giliranmu! Tekan Lempar Dadu untuk mulai.
+      </div>
+    </div>
+
+    <!-- Tombol Aksi -->
+    <div class="controls">
+      <button class="btn-roll" id="btnRoll" onclick="playerRoll()">🎲 Lempar Dadu</button>
+      <button class="btn-hold" id="btnHold" onclick="playerHold()" disabled>💾 Simpan Poin</button>
+      <button class="btn-restart" id="btnRestart" onclick="resetGame()">🔄 Mulai Ulang Duel</button>
+    </div>
+
+    <!-- Panduan Singkat -->
+    <div class="rules">
+      <b>Cara Bermain:</b> Lempar dadu untuk mengumpulkan poin ronde (⚁–⚅). Tekan <b>Simpan Poin</b> kapan saja agar poin aman masuk ke skor utama. Awas! Jika keluar <b>⚀ (1)</b>, poin ronde hangus dan giliran pindah ke Bot.
+    </div>
+  </div>
+
+  <script>
+    const TARGET_SCORE = 50;
+    const DICE_EMOTES = { 1: '⚀', 2: '⚁', 3: '⚂', 4: '⚃', 5: '⚄', 6: '⚅' };
+
+    // Inisialisasi SDK Telegram WebApp
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      // Mencegah aplikasi tertutup tidak sengaja saat swipe ke bawah
+      if (typeof tg.disableVerticalSwipes === 'function') {
+        tg.disableVerticalSwipes();
+      }
+      // Tampilkan nama depan user Telegram
+      const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
+      if (user && user.first_name) {
+        document.getElementById('greeting').textContent = `Halo, ${user.first_name}! 👋`;
+        document.getElementById('playerLabel').textContent = user.first_name.toUpperCase();
+      }
+    }
+
+    // State Permainan
+    let playerScore = 0;
+    let botScore = 0;
+    let roundScore = 0;
+    let isPlayerTurn = true;
+    let isRolling = false;
+    let gameOver = false;
+    let stats = { wins: 0, plays: 0 };
+
+    let rollInterval = null;
+    let botTimeout = null;
+
+    // Helper Getaran Haptic Telegram
+    function haptic(type, style) {
+      if (!tg || !tg.HapticFeedback) return;
+      if (type === 'impact') tg.HapticFeedback.impactOccurred(style || 'medium');
+      if (type === 'notify') tg.HapticFeedback.notificationOccurred(style || 'success');
+    }
+
+    // Simpan & Muat Statistik (Telegram CloudStorage atau localStorage)
+    function loadStats() {
+      if (tg && tg.initData && tg.isVersionAtLeast('6.9') && tg.CloudStorage) {
+        tg.CloudStorage.getItem('dice_duel_stats', (err, val) => {
+          if (!err && val) {
+            try { stats = JSON.parse(val); } catch (e) {}
+            renderStats();
+          }
+        });
+      } else {
+        const saved = localStorage.getItem('dice_duel_stats');
+        if (saved) {
+          try { stats = JSON.parse(saved); } catch (e) {}
+        }
+        renderStats();
+      }
+    }
+
+    function saveStats() {
+      const payload = JSON.stringify(stats);
+      if (tg && tg.initData && tg.isVersionAtLeast('6.9') && tg.CloudStorage) {
+        tg.CloudStorage.setItem('dice_duel_stats', payload);
+      } else {
+        localStorage.setItem('dice_duel_stats', payload);
+      }
+      renderStats();
+    }
+
+    function renderStats() {
+      document.getElementById('winCount').textContent = stats.wins;
+      document.getElementById('playCount').textContent = stats.plays;
+    }
+
+    // RNG Adil (Crypto API)
+    function rollD6() {
+      const array = new Uint32Array(1);
+      const maxValid = Math.floor(0x100000000 / 6) * 6;
+      let rand;
+      do {
+        window.crypto.getRandomValues(array);
+        rand = array[0];
+      } while (rand >= maxValid);
+      return (rand % 6) + 1;
+    }
+
+    function animateRoll(callback) {
+      isRolling = true;
+      updateUI();
+      const diceBox = document.getElementById('diceBox');
+      diceBox.classList.remove('bust');
+      diceBox.classList.add('rolling');
+
+      rollInterval = setInterval(() => {
+        diceBox.textContent = DICE_EMOTES[rollD6()];
+      }, 65);
+
+      setTimeout(() => {
+        clearInterval(rollInterval);
+        rollInterval = null;
+        const result = rollD6();
+        diceBox.classList.remove('rolling');
+        diceBox.textContent = DICE_EMOTES[result];
+        isRolling = false;
+        callback(result);
+      }, 380);
+    }
+
+    // Aksi Pemain: Lempar Dadu
+    function playerRoll() {
+      if (!isPlayerTurn || isRolling || gameOver) return;
+      haptic('impact', 'medium');
+
+      animateRoll((val) => {
+        if (val === 1) {
+          document.getElementById('diceBox').classList.add('bust');
+          haptic('notify', 'error');
+          roundScore = 0;
+          isPlayerTurn = false;
+          setStatus('Yah! Keluar ⚀ (1). Poin ronde hangus, giliran Bot...');
+          updateUI();
+          botTimeout = setTimeout(botTurn, 1000);
+        } else {
+          roundScore += val;
+          setStatus(`Keluar ${DICE_EMOTES[val]} (+${val})! Lempar lagi atau Simpan?`);
+          updateUI();
+        }
+      });
+    }
+
+    // Aksi Pemain: Simpan Poin
+    function playerHold() {
+      if (!isPlayerTurn || isRolling || gameOver || roundScore === 0) return;
+      haptic('impact', 'light');
+
+      playerScore += roundScore;
+      roundScore = 0;
+
+      if (playerScore >= TARGET_SCORE) {
+        endGame(true);
+        return;
+      }
+
+      isPlayerTurn = false;
+      setStatus('Poin tersimpan! Sekarang giliran Bot...');
+      updateUI();
+      botTimeout = setTimeout(botTurn, 850);
+    }
+
+    // Giliran AI Bot
+    function botTurn() {
+      if (isPlayerTurn || gameOver) return;
+
+      animateRoll((val) => {
+        if (val === 1) {
+          document.getElementById('diceBox').classList.add('bust');
+          roundScore = 0;
+          isPlayerTurn = true;
+          setStatus('Bot dapat ⚀ (1)! Poin Bot hangus. Giliranmu!');
+          updateUI();
+          return;
+        }
+
+        roundScore += val;
+        updateUI();
+
+        // Jika poin sudah cukup untuk menang, Bot langsung simpan
+        if (botScore + roundScore >= TARGET_SCORE) {
+          setStatus(`Bot dapat ${DICE_EMOTES[val]} dan menyimpan poin!`);
+          botTimeout = setTimeout(() => {
+            botScore += roundScore;
+            roundScore = 0;
+            endGame(false);
+          }, 700);
+          return;
+        }
+
+        // Strategi Bot: tahan jika poin ronde sudah >= 13 (lebih berani jika tertinggal)
+        const botRiskLimit = playerScore >= 38 ? 18 : 13;
+        if (roundScore >= botRiskLimit) {
+          setStatus(`Bot dapat ${DICE_EMOTES[val]} dan memilih Simpan Poin.`);
+          botTimeout = setTimeout(() => {
+            botScore += roundScore;
+            roundScore = 0;
+            isPlayerTurn = true;
+            setStatus('Giliranmu! Lempar dadu untuk mengejar skor.');
+            updateUI();
+          }, 800);
+        } else {
+          setStatus(`Bot dapat ${DICE_EMOTES[val]} (+${val}), Bot melempar lagi...`);
+          botTimeout = setTimeout(botTurn, 850);
+        }
+      });
+    }
+
+    function endGame(playerWon) {
+      gameOver = true;
+      stats.plays += 1;
+      if (playerWon) {
+        stats.wins += 1;
+        haptic('notify', 'success');
+        document.getElementById('playerCard').classList.add('winner');
+        setStatus(`🎉 SELAMAT! Kamu menang dengan skor ${playerScore} - ${botScore}!`);
+      } else {
+        haptic('notify', 'warning');
+        document.getElementById('botCard').classList.add('winner');
+        setStatus(`🤖 Bot menang (${botScore} - ${playerScore}). Coba balas di ronde berikutnya!`);
+      }
+      saveStats();
+      updateUI();
+    }
+
+    function resetGame() {
+      clearInterval(rollInterval);
+      clearTimeout(botTimeout);
+      playerScore = 0;
+      botScore = 0;
+      roundScore = 0;
+      isPlayerTurn = true;
+      isRolling = false;
+      gameOver = false;
+
+      const diceBox = document.getElementById('diceBox');
+      diceBox.classList.remove('rolling', 'bust');
+      diceBox.textContent = '🎲';
+
+      document.getElementById('playerCard').classList.remove('winner');
+      document.getElementById('botCard').classList.remove('winner');
+
+      setStatus('Duel baru dimulai! Tekan Lempar Dadu.');
+      updateUI();
+      haptic('impact', 'light');
+    }
+
+    function setStatus(msg) {
+      document.getElementById('statusText').textContent = msg;
+    }
+
+    function updateUI() {
+      document.getElementById('playerScore').textContent = playerScore;
+      document.getElementById('botScore').textContent = botScore;
+      document.getElementById('roundScore').textContent = roundScore;
+
+      document.getElementById('playerBar').style.width = `${Math.min(100, (playerScore / TARGET_SCORE) * 100)}%`;
+      document.getElementById('botBar').style.width = `${Math.min(100, (botScore / TARGET_SCORE) * 100)}%`;
+
+      document.getElementById('playerCard').classList.toggle('active', !gameOver && isPlayerTurn);
+      document.getElementById('botCard').classList.toggle('active', !gameOver && !isPlayerTurn);
+
+      document.getElementById('btnRoll').disabled = !isPlayerTurn || isRolling || gameOver;
+      document.getElementById('btnHold').disabled = !isPlayerTurn || isRolling || gameOver || roundScore === 0;
+    }
+
+    loadStats();
+    updateUI();
+  </script>
+</body>
+</html>
