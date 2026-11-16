@@ -3,21 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Duel Dadu Neon - Telegram Mini App</title>
+  <title>Duel Dadu Anime - Telegram Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
     :root {
-      --bg-dark: #090d16;
-      --bg-grad: radial-gradient(circle at 50% 0%, #1e293b 0%, #090d16 70%);
-      --card-bg: rgba(255, 255, 255, 0.06);
-      --card-border: rgba(255, 255, 255, 0.1);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --blue: #38bdf8;
-      --indigo: #6366f1;
-      --amber: #fbbf24;
-      --green: #34d399;
-      --red: #fb7185;
+      --bg-anime: linear-gradient(165deg, #160c2e 0%, #24134d 45%, #0f172a 100%);
+      --glass: rgba(20, 16, 46, 0.72);
+      --glass-border: rgba(255, 255, 255, 0.16);
+      --text-main: #ffffff;
+      --text-sub: #cbd5e1;
+      --cyan: #38bdf8;
+      --pink: #f472b6;
+      --gold: #fbbf24;
+      --emerald: #34d399;
+      --crimson: #fb7185;
     }
 
     * {
@@ -25,18 +26,43 @@
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      touch-action: manipulation;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
     }
 
     body {
-      background: var(--bg-dark);
-      background-image: var(--bg-grad);
+      background: #130b29;
+      background-image: var(--bg-anime);
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      padding: calc(14px + var(--tg-safe-area-inset-top, 0px)) 14px calc(22px + var(--tg-safe-area-inset-bottom, 0px));
+      padding: calc(10px + var(--tg-safe-area-inset-top, 0px)) 12px calc(18px + var(--tg-safe-area-inset-bottom, 0px));
       overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Latar Belakang Sakura & Bintang Anime */
+    .anime-sky {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .sakura {
+      position: absolute;
+      top: -30px;
+      font-size: 16px;
+      opacity: 0.55;
+      filter: drop-shadow(0 0 6px rgba(244, 114, 182, 0.6));
+      animation: sakuraFall linear infinite;
+    }
+    @keyframes sakuraFall {
+      0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0; }
+      15% { opacity: 0.65; }
+      85% { opacity: 0.55; }
+      100% { transform: translateY(105vh) translateX(45px) rotate(360deg); opacity: 0; }
     }
 
     .app {
@@ -44,327 +70,461 @@
       max-width: 440px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       position: relative;
+      z-index: 1;
+    }
+    .app.screen-shake {
+      animation: appShake 0.4s ease;
+    }
+    @keyframes appShake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-6px, 3px); }
+      40% { transform: translate(6px, -3px); }
+      60% { transform: translate(-4px, -2px); }
+      80% { transform: translate(4px, 2px); }
     }
 
-    /* Header */
+    /* Header Anime */
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      backdrop-filter: blur(12px);
-      padding: 12px 14px;
-      border-radius: 16px;
-    }
-    .user-info h2 {
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-    }
-    .user-info p {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-    .header-right {
-      display: flex;
-      align-items: center;
       gap: 8px;
+      background: var(--glass);
+      border: 1.5px solid var(--glass-border);
+      backdrop-filter: blur(14px);
+      padding: 10px 12px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
-    .stats-pill {
-      background: rgba(56, 189, 248, 0.14);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      color: var(--blue);
-      padding: 6px 10px;
-      border-radius: 12px;
+    .title-wrap h2 {
+      font-size: 15px;
+      font-weight: 800;
+      background: linear-gradient(90deg, #38bdf8, #f472b6, #fbbf24);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .title-wrap p {
       font-size: 11px;
-      font-weight: 700;
-      line-height: 1.35;
+      color: var(--text-sub);
+      margin-top: 1px;
+    }
+    .header-right { display: flex; align-items: center; gap: 7px; }
+    .stats-pill {
+      background: rgba(244, 114, 182, 0.16);
+      border: 1px solid rgba(244, 114, 182, 0.45);
+      color: #fbcfe8;
+      padding: 4px 9px;
+      border-radius: 11px;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.3;
       text-align: right;
     }
     .btn-sound {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      border: 1px solid var(--card-border);
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-main);
-      font-size: 18px;
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      border: 1.5px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 17px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.1s, background 0.2s;
-    }
-    .btn-sound:active {
-      transform: scale(0.92);
     }
 
-    /* Papan Skor */
-    .scoreboard {
+    /* Mode Selector */
+    .mode-tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background: var(--glass);
+      padding: 4px;
+      border-radius: 14px;
+      border: 1px solid var(--glass-border);
     }
-    .player-card {
-      background: var(--card-bg);
-      border: 1.5px solid var(--card-border);
-      border-radius: 18px;
-      padding: 14px;
+    .mode-tab {
+      border: none;
+      background: transparent;
+      color: var(--text-sub);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 4px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-tab.active {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(236, 72, 153, 0.4);
+    }
+
+    /* Online Panel */
+    .online-panel {
+      display: none;
+      background: var(--glass);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 15px;
+      padding: 10px;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .online-panel.show { display: flex; }
+    .online-row { display: flex; gap: 7px; align-items: center; }
+    .input-code {
+      flex: 1;
+      min-width: 0;
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
+      background: rgba(0, 0, 0, 0.4);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 3px;
+    }
+    .input-code::placeholder { letter-spacing: 0; font-weight: 500; color: #94a3b8; }
+    .btn-mini {
+      border: none;
+      border-radius: 10px;
+      padding: 9px 11px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-create { background: linear-gradient(135deg, #10b981, #059669); }
+    .btn-join { background: linear-gradient(135deg, #0ea5e9, #6366f1); }
+    .btn-share { background: rgba(56, 189, 248, 0.22); border: 1px solid var(--cyan); color: var(--cyan); }
+    .btn-leave { background: rgba(251, 113, 133, 0.22); border: 1px solid var(--crimson); color: var(--crimson); }
+    .room-badge { flex: 1; font-size: 13px; font-weight: 800; color: var(--gold); }
+    .setup-warning {
+      font-size: 11.5px;
+      color: #fde68a;
+      background: rgba(251, 191, 36, 0.14);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      padding: 8px 10px;
+      border-radius: 10px;
+      line-height: 1.4;
+    }
+
+    /* Battle Scoreboard dengan Avatar Anime */
+    .battle-board {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 6px;
+    }
+    .vs-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+      font-style: italic;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.55);
+      border: 2px solid #fff;
+      z-index: 2;
+    }
+    .fighter-card {
+      background: var(--glass);
+      border: 2px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 9px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       transition: all 0.25s ease;
       position: relative;
       overflow: hidden;
     }
-    .player-card.active-player {
-      border-color: var(--blue);
-      box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
-      transform: translateY(-2px);
+    .fighter-card.p2-card {
+      flex-direction: row-reverse;
+      text-align: right;
     }
-    .player-card.active-bot {
-      border-color: var(--amber);
-      box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
-      transform: translateY(-2px);
+    .fighter-card.active-p1 {
+      border-color: var(--cyan);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+      background: rgba(14, 165, 233, 0.14);
     }
-    .player-card.winner {
-      border-color: var(--green);
-      box-shadow: 0 0 24px rgba(52, 211, 153, 0.3);
+    .fighter-card.active-p2 {
+      border-color: var(--pink);
+      box-shadow: 0 0 20px rgba(244, 114, 182, 0.35);
+      background: rgba(236, 72, 153, 0.14);
     }
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-muted);
-      letter-spacing: 0.4px;
+    .fighter-card.winner {
+      border-color: var(--gold);
+      box-shadow: 0 0 26px rgba(251, 191, 36, 0.5);
     }
-    .turn-badge {
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 99px;
+
+    .avatar-wrap {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+      transition: transform 0.2s;
+    }
+    .active-p1 .avatar-wrap, .active-p2 .avatar-wrap {
+      transform: scale(1.06);
+      border-color: #fff;
+    }
+    .avatar-svg { width: 100%; height: 100%; display: block; }
+    .avatar-svg .eyes-hype, .avatar-svg .eyes-shock, .avatar-svg .fx-sweat, .avatar-svg .fx-sparkle { display: none; }
+    .avatar-svg.mood-hype .eyes-normal { display: none; }
+    .avatar-svg.mood-hype .eyes-hype, .avatar-svg.mood-hype .fx-sparkle { display: block; }
+    .avatar-svg.mood-shock .eyes-normal { display: none; }
+    .avatar-svg.mood-shock .eyes-shock, .avatar-svg.mood-shock .fx-sweat { display: block; }
+
+    .fighter-info { flex: 1; min-width: 0; }
+    .fighter-name {
+      font-size: 11px;
       font-weight: 800;
-      display: none;
+      color: var(--text-sub);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
     }
-    .active-player .turn-badge {
-      display: inline-block;
-      background: rgba(56, 189, 248, 0.2);
-      color: var(--blue);
+    .fighter-score {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.05;
+      margin: 2px 0 4px;
     }
-    .active-bot .turn-badge {
-      display: inline-block;
-      background: rgba(251, 191, 36, 0.2);
-      color: var(--amber);
-    }
-    .score-row {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-      margin: 8px 0 10px;
-    }
-    .score-num {
-      font-size: 36px;
-      font-weight: 800;
-      line-height: 1;
-    }
-    .score-target {
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-    .progress-track {
+    .fighter-score span { font-size: 11px; color: var(--text-sub); font-weight: 700; }
+
+    .hp-track {
       width: 100%;
       height: 7px;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.45);
       border-radius: 99px;
       overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .progress-fill {
+    .hp-fill {
       height: 100%;
       width: 0%;
       border-radius: 99px;
-      background: linear-gradient(90deg, var(--blue), var(--indigo));
+      background: linear-gradient(90deg, #0ea5e9, #38bdf8, #a5f3fc);
       transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .bot-fill {
-      background: linear-gradient(90deg, #f59e0b, var(--amber));
+    .hp-fill.p2 {
+      background: linear-gradient(90deg, #f43f5e, #f472b6, #fde047);
     }
 
-    /* Arena Dadu Tengah */
+    /* Arena Dadu Sihir Anime */
     .arena {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
+      background: var(--glass);
+      border: 1.5px solid var(--glass-border);
+      backdrop-filter: blur(12px);
       border-radius: 22px;
-      padding: 22px 16px 18px;
+      padding: 16px 14px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 14px;
+      gap: 10px;
       position: relative;
       overflow: hidden;
-    }
-    .arena::before {
-      content: '';
-      position: absolute;
-      width: 180px;
-      height: 180px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.18), transparent 70%);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -55%);
-      pointer-events: none;
-    }
-    .round-pill {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--card-border);
-      padding: 6px 14px;
-      border-radius: 99px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-muted);
-      z-index: 1;
-    }
-    .round-pill strong {
-      color: var(--amber);
-      font-size: 16px;
-      margin-left: 4px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
     }
 
+    /* Speedlines saat roll angka besar */
+    .speed-lines {
+      position: absolute;
+      inset: -40%;
+      background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 255, 255, 0.08) 0deg 4deg,
+        transparent 4deg 14deg
+      );
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .arena.fever-fx .speed-lines {
+      opacity: 1;
+      animation: spinSlow 6s linear infinite;
+    }
+
+    .top-arena-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 2;
+    }
+    .round-pill {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      padding: 5px 13px;
+      border-radius: 99px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+    .round-pill strong { color: var(--gold); font-size: 16px; margin-left: 4px; }
+
+    .combo-pill {
+      display: none;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
+      animation: pulseBadge 0.8s infinite alternate;
+    }
+    .combo-pill.show { display: inline-block; }
+    @keyframes pulseBadge {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+
+    /* Lingkaran Sihir + Dadu */
     .dice-stage {
       position: relative;
+      width: 146px;
+      height: 146px;
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 4px 0;
-      z-index: 1;
+      z-index: 2;
     }
+    .magic-ring {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.6;
+      animation: spinSlow 14s linear infinite;
+      pointer-events: none;
+    }
+    .arena.fever-fx .magic-ring {
+      opacity: 1;
+      animation: spinSlow 4s linear infinite;
+      filter: drop-shadow(0 0 10px #fbbf24);
+    }
+    @keyframes spinSlow {
+      to { transform: rotate(360deg); }
+    }
+
     .dice-box {
-      width: 118px;
-      height: 118px;
-      background: linear-gradient(145deg, #38bdf8, #4f46e5);
+      width: 104px;
+      height: 104px;
+      background: linear-gradient(145deg, #38bdf8, #6366f1);
       color: #ffffff;
-      border-radius: 28px;
+      border-radius: 26px;
+      border: 2.5px solid rgba(255, 255, 255, 0.55);
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 76px;
+      font-size: 68px;
       line-height: 1;
       font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols', sans-serif;
       box-shadow:
-        0 14px 30px rgba(56, 189, 248, 0.28),
-        inset 0 2px 4px rgba(255, 255, 255, 0.45),
-        inset 0 -4px 8px rgba(0, 0, 0, 0.3);
+        0 12px 28px rgba(56, 189, 248, 0.42),
+        inset 0 3px 6px rgba(255, 255, 255, 0.55),
+        inset 0 -5px 10px rgba(0, 0, 0, 0.35);
       user-select: none;
-      transition: background 0.25s, box-shadow 0.25s, transform 0.15s;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+      transition: background 0.25s, transform 0.12s, box-shadow 0.25s;
     }
-    .dice-box.bot-mode {
-      background: linear-gradient(145deg, #fbbf24, #d97706);
+    .dice-box:active { transform: scale(0.93); }
+    .dice-box.p2-mode {
+      background: linear-gradient(145deg, #f472b6, #a855f7);
       box-shadow:
-        0 14px 30px rgba(251, 191, 36, 0.28),
-        inset 0 2px 4px rgba(255, 255, 255, 0.45),
-        inset 0 -4px 8px rgba(0, 0, 0, 0.3);
+        0 12px 28px rgba(244, 114, 182, 0.45),
+        inset 0 3px 6px rgba(255, 255, 255, 0.55),
+        inset 0 -5px 10px rgba(0, 0, 0, 0.35);
     }
     .dice-box.bust {
       background: linear-gradient(145deg, #fb7185, #be123c);
-      box-shadow:
-        0 14px 30px rgba(251, 113, 133, 0.38),
-        inset 0 2px 4px rgba(255, 255, 255, 0.4);
-      animation: bustShake 0.4s ease;
+      box-shadow: 0 12px 30px rgba(244, 63, 94, 0.65);
+      animation: bustShake 0.42s ease;
     }
-    .dice-box.rolling {
-      animation: rollTumble 0.3s infinite linear;
-    }
+    .dice-box.rolling { animation: rollTumble 0.26s infinite linear; }
 
     .pop-float {
       position: absolute;
-      top: -12px;
-      font-size: 18px;
-      font-weight: 800;
-      padding: 3px 10px;
+      top: -6px;
+      font-size: 16px;
+      font-weight: 900;
+      font-style: italic;
+      padding: 4px 12px;
       border-radius: 99px;
+      border: 2px solid #fff;
       pointer-events: none;
       opacity: 0;
-      transform: translateY(10px) scale(0.8);
+      z-index: 5;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      white-space: nowrap;
     }
-    .pop-float.show {
-      animation: floatUp 0.85s ease forwards;
-    }
+    .pop-float.show { animation: floatUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
     .status-text {
-      font-size: 14px;
-      font-weight: 500;
-      min-height: 40px;
+      font-size: 13.5px;
+      font-weight: 600;
+      min-height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--text-main);
-      line-height: 1.4;
-      z-index: 1;
+      line-height: 1.35;
+      z-index: 2;
+      color: #f1f5f9;
     }
 
-    /* Tombol Kontrol */
-    .controls {
-      display: grid;
-      grid-template-columns: 1.35fr 1fr;
-      gap: 10px;
-    }
+    /* Tombol Aksi */
+    .controls { display: grid; grid-template-columns: 1.35fr 1fr; gap: 10px; }
     .btn-action {
-      border: none;
+      border: 2px solid rgba(255, 255, 255, 0.25);
       border-radius: 16px;
-      padding: 16px 12px;
+      padding: 14px 10px;
       font-size: 15px;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
       color: #ffffff;
-      transition: transform 0.1s, opacity 0.2s, box-shadow 0.2s;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      transition: transform 0.1s, opacity 0.2s;
     }
-    .btn-action:active:not(:disabled) {
-      transform: scale(0.96);
-    }
-    .btn-action:disabled {
-      opacity: 0.38;
-      cursor: not-allowed;
-      box-shadow: none !important;
-    }
+    .btn-action:active:not(:disabled) { transform: scale(0.95); }
+    .btn-action:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none !important; }
     .btn-roll {
       background: linear-gradient(135deg, #0ea5e9, #6366f1);
-      box-shadow: 0 8px 20px rgba(56, 189, 248, 0.25);
+      box-shadow: 0 8px 22px rgba(99, 102, 241, 0.4);
     }
     .btn-hold {
       background: linear-gradient(135deg, #10b981, #059669);
-      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+      box-shadow: 0 8px 22px rgba(16, 185, 129, 0.4);
     }
     .btn-restart {
       grid-column: 1 / -1;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      color: var(--text-main);
-      padding: 12px;
-      font-size: 14px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text-sub);
+      padding: 11px;
+      font-size: 13px;
       font-weight: 700;
-      border-radius: 14px;
+      border-radius: 13px;
       cursor: pointer;
     }
 
-    /* Aturan Singkat */
-    .rules {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 14px;
-      padding: 12px 14px;
-      font-size: 12px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-    .rules b {
-      color: var(--text-main);
-    }
-
-    /* Confetti sederhana */
     .confetti {
       position: fixed;
       top: -20px;
@@ -375,317 +535,96 @@
     }
 
     @keyframes rollTumble {
-      0%   { transform: rotate(0deg) scale(1.04); }
-      25%  { transform: rotate(12deg) scale(1.08); }
-      50%  { transform: rotate(-12deg) scale(1.04); }
-      75%  { transform: rotate(10deg) scale(1.08); }
-      100% { transform: rotate(0deg) scale(1.04); }
+      0% { transform: rotate(0deg) scale(1.05); }
+      25% { transform: rotate(14deg) scale(1.1); }
+      50% { transform: rotate(-14deg) scale(1.05); }
+      75% { transform: rotate(10deg) scale(1.1); }
+      100% { transform: rotate(0deg) scale(1.05); }
     }
     @keyframes bustShake {
       0%, 100% { transform: translateX(0); }
-      20% { transform: translateX(-8px) rotate(-4deg); }
-      40% { transform: translateX(8px) rotate(4deg); }
+      20% { transform: translateX(-8px) rotate(-5deg); }
+      40% { transform: translateX(8px) rotate(5deg); }
       60% { transform: translateX(-6px); }
       80% { transform: translateX(6px); }
     }
     @keyframes floatUp {
-      0%   { opacity: 0; transform: translateY(10px) scale(0.8); }
-      20%  { opacity: 1; transform: translateY(-6px) scale(1.08); }
-      100% { opacity: 0; transform: translateY(-34px) scale(1); }
+      0% { opacity: 0; transform: translateY(12px) scale(0.75); }
+      20% { opacity: 1; transform: translateY(-6px) scale(1.12); }
+      100% { opacity: 0; transform: translateY(-38px) scale(1); }
     }
     @keyframes fallDown {
-      to {
-        transform: translateY(105vh) rotate(360deg);
-        opacity: 0;
-      }
+      to { transform: translateY(105vh) rotate(360deg); opacity: 0; }
     }
   </style>
 </head>
 <body>
-  <div class="app">
+  <!-- Latar Sakura Anime -->
+  <div class="anime-sky" id="animeSky"></div>
+
+  <div class="app" id="appRoot">
     <!-- Header -->
     <div class="header">
-      <div class="user-info">
-        <h2 id="greeting">Halo, Pemain! 👋</h2>
-        <p>Duel Dadu 50 • Arcade Mode</p>
+      <div class="title-wrap">
+        <h2 id="greeting">✨ Duel Dadu Anime</h2>
+        <p>Target 50 Poin • Ketuk dadu untuk lempar</p>
       </div>
       <div class="header-right">
         <div class="stats-pill">
           🏆 <span id="winCount">0</span> Menang<br />
           🎮 <span id="playCount">0</span> Main
         </div>
-        <button class="btn-sound" id="btnSound" onclick="toggleSound()" title="Suara">🔊</button>
+        <button class="btn-sound" id="btnSound" type="button" onclick="toggleSound()">🔊</button>
       </div>
     </div>
 
-    <!-- Papan Skor -->
-    <div class="scoreboard">
-      <div class="player-card active-player" id="playerCard">
-        <div class="card-header">
-          <span id="playerLabel">😎 KAMU</span>
-          <span class="turn-badge">GILIRAN</span>
-        </div>
-        <div class="score-row">
-          <span class="score-num" id="playerScore">0</span>
-          <span class="score-target">/ 50</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill" id="playerBar"></div>
-        </div>
-      </div>
+    <!-- Pemilih Mode -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tabBot" type="button" onclick="switchMode('bot')">🤖 Lawan Bot</button>
+      <button class="mode-tab" id="tabLocal" type="button" onclick="switchMode('local')">👥 2P (1 HP)</button>
+      <button class="mode-tab" id="tabOnline" type="button" onclick="switchMode('online')">🌐 Online</button>
+    </div>
 
-      <div class="player-card" id="botCard">
-        <div class="card-header">
-          <span>🤖 BOT</span>
-          <span class="turn-badge">BERPIKIR</span>
-        </div>
-        <div class="score-row">
-          <span class="score-num" id="botScore">0</span>
-          <span class="score-target">/ 50</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill bot-fill" id="botBar"></div>
-        </div>
+    <!-- Panel Online -->
+    <div class="online-panel" id="onlinePanel">
+      <div id="firebaseWarning" class="setup-warning" style="display:none;">
+        ⚙️ <b>Database Online belum diisi.</b> Tempel <code>FIREBASE_DB_URL</code> di kode <code>index.html</code> untuk mabar beda HP, atau pilih <b>👥 2P (1 HP)</b> untuk langsung main berdua!
+      </div>
+      <div id="lobbyControls" class="online-row">
+        <button class="btn-mini btn-create" type="button" onclick="createOnlineRoom()">+ Buat Room</button>
+        <input class="input-code" id="roomCodeInput" type="tel" maxlength="4" placeholder="Kode 4 angka" />
+        <button class="btn-mini btn-join" type="button" onclick="joinOnlineRoom()">Gabung</button>
+      </div>
+      <div id="roomControls" class="online-row" style="display:none;">
+        <div class="room-badge">Room: <span id="activeRoomCode">----</span></div>
+        <button class="btn-mini btn-share" type="button" onclick="shareOnlineRoom()">📤 Ajak Teman</button>
+        <button class="btn-mini btn-leave" type="button" onclick="leaveOnlineRoom(true)">Keluar</button>
       </div>
     </div>
 
-    <!-- Arena Dadu -->
-    <div class="arena">
-      <div class="round-pill">
-        Poin Ronde Ini: <strong id="roundScore">0</strong>
-      </div>
-
-      <div class="dice-stage">
-        <div class="pop-float" id="popFloat"></div>
-        <div class="dice-box" id="diceBox">🎲</div>
-      </div>
-
-      <div class="status-text" id="statusText">
-        Giliranmu! Tekan Lempar Dadu untuk mulai.
-      </div>
-    </div>
-
-    <!-- Tombol Aksi -->
-    <div class="controls">
-      <button class="btn-action btn-roll" id="btnRoll" onclick="playerRoll()">🎲 Lempar Dadu</button>
-      <button class="btn-action btn-hold" id="btnHold" onclick="playerHold()" disabled>💾 Simpan Poin</button>
-      <button class="btn-restart" id="btnRestart" onclick="resetGame()">🔄 Mulai Ulang Duel</button>
-    </div>
-
-    <!-- Aturan -->
-    <div class="rules">
-      <b>Aturan:</b> Kumpulkan poin ronde dari dadu <b>⚁–⚅</b>, lalu tekan <b>Simpan Poin</b> agar aman masuk skor utama. Jika keluar <b>⚀ (1)</b>, poin ronde hangus! Pemain pertama yang tembus <b>50 poin</b> menang.
-    </div>
-  </div>
-
-  <script>
-    const TARGET_SCORE = 50;
-    const DICE_EMOTES = { 1: '⚀', 2: '⚁', 3: '⚂', 4: '⚃', 5: '⚄', 6: '⚅' };
-
-    // --- Telegram Mini App SDK ---
-    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-      if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
-      if (typeof tg.setHeaderColor === 'function') tg.setHeaderColor('#090d16');
-      if (typeof tg.setBackgroundColor === 'function') tg.setBackgroundColor('#090d16');
-
-      const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
-      if (user && user.first_name) {
-        document.getElementById('greeting').textContent = `Halo, ${user.first_name}! 👋`;
-        document.getElementById('playerLabel').textContent = `😎 ${user.first_name.toUpperCase()}`;
-      }
-    }
-
-    // --- Mesin Efek Suara (Web Audio API tanpa file MP3) ---
-    let audioCtx = null;
-    let soundEnabled = localStorage.getItem('dice_sound_enabled') !== 'false';
-
-    function updateSoundButton() {
-      document.getElementById('btnSound').textContent = soundEnabled ? '🔊' : '🔇';
-    }
-    updateSoundButton();
-
-    function ensureAudio() {
-      if (!soundEnabled) return null;
-      try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return null;
-        if (!audioCtx) audioCtx = new AudioCtx();
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume().catch(() => {});
-        }
-        return audioCtx;
-      } catch (e) {
-        return null;
-      }
-    }
-
-    function playTone(freq, duration, type = 'sine', volume = 0.14, delay = 0) {
-      const ctx = ensureAudio();
-      if (!ctx) return;
-      try {
-        const now = ctx.currentTime + delay;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, now);
-        gain.gain.setValueAtTime(volume, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + duration);
-      } catch (e) {}
-    }
-
-    // Suara klik dadu bergulir
-    function sfxTick() {
-      const freq = 260 + Math.random() * 180;
-      playTone(freq, 0.04, 'triangle', 0.08);
-    }
-
-    // Suara dadu mendarat (2-6)
-    function sfxLand(val) {
-      playTone(360 + val * 60, 0.13, 'sine', 0.16);
-    }
-
-    // Suara simpan poin
-    function sfxHold() {
-      playTone(523.25, 0.11, 'triangle', 0.16, 0);
-      playTone(659.25, 0.16, 'triangle', 0.16, 0.09);
-    }
-
-    // Suara zonk (keluar 1)
-    function sfxBust() {
-      const ctx = ensureAudio();
-      if (!ctx) return;
-      try {
-        const now = ctx.currentTime;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(240, now);
-        osc.frequency.exponentialRampToValueAtTime(85, now + 0.35);
-        gain.gain.setValueAtTime(0.14, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.37);
-      } catch (e) {}
-    }
-
-    // Suara menang
-    function sfxWin() {
-      const notes = [523.25, 659.25, 783.99, 1046.5];
-      notes.forEach((n, idx) => playTone(n, 0.22, 'triangle', 0.18, idx * 0.09));
-    }
-
-    // Suara kalah
-    function sfxLose() {
-      const notes = [392.0, 329.63, 261.63];
-      notes.forEach((n, idx) => playTone(n, 0.25, 'sine', 0.15, idx * 0.14));
-    }
-
-    function toggleSound() {
-      soundEnabled = !soundEnabled;
-      localStorage.setItem('dice_sound_enabled', soundEnabled);
-      updateSoundButton();
-      if (soundEnabled) {
-        playTone(600, 0.08, 'sine', 0.12);
-      }
-      haptic('impact', 'light');
-    }
-
-    // --- State Permainan ---
-    let playerScore = 0;
-    let botScore = 0;
-    let roundScore = 0;
-    let isPlayerTurn = true;
-    let isRolling = false;
-    let gameOver = false;
-    let stats = { wins: 0, plays: 0 };
-
-    let rollInterval = null;
-    let botTimeout = null;
-
-    function haptic(type, style) {
-      if (!tg || !tg.HapticFeedback) return;
-      if (type === 'impact') tg.HapticFeedback.impactOccurred(style || 'medium');
-      if (type === 'notify') tg.HapticFeedback.notificationOccurred(style || 'success');
-    }
-
-    function loadStats() {
-      if (tg && tg.initData && tg.isVersionAtLeast('6.9') && tg.CloudStorage) {
-        tg.CloudStorage.getItem('dice_duel_stats', (err, val) => {
-          if (!err && val) {
-            try { stats = JSON.parse(val); } catch (e) {}
-            renderStats();
-          }
-        });
-      } else {
-        const saved = localStorage.getItem('dice_duel_stats');
-        if (saved) {
-          try { stats = JSON.parse(saved); } catch (e) {}
-        }
-        renderStats();
-      }
-    }
-
-    function saveStats() {
-      const payload = JSON.stringify(stats);
-      if (tg && tg.initData && tg.isVersionAtLeast('6.9') && tg.CloudStorage) {
-        tg.CloudStorage.setItem('dice_duel_stats', payload);
-      } else {
-        localStorage.setItem('dice_duel_stats', payload);
-      }
-      renderStats();
-    }
-
-    function renderStats() {
-      document.getElementById('winCount').textContent = stats.wins;
-      document.getElementById('playCount').textContent = stats.plays;
-    }
-
-    function rollD6() {
-      const array = new Uint32Array(1);
-      const maxValid = Math.floor(0x100000000 / 6) * 6;
-      let rand;
-      do {
-        window.crypto.getRandomValues(array);
-        rand = array[0];
-      } while (rand >= maxValid);
-      return (rand % 6) + 1;
-    }
-
-    function showPop(text, bgColor) {
-      const pop = document.getElementById('popFloat');
-      pop.textContent = text;
-      pop.style.background = bgColor;
-      pop.style.color = '#ffffff';
-      pop.classList.remove('show');
-      void pop.offsetWidth; // restart CSS animasi
-      pop.classList.add('show');
-    }
-
-    function launchConfetti() {
-      const icons = ['🎉', '🎲', '✨', '🏆', '💎'];
-      for (let i = 0; i < 18; i++) {
-        const el = document.createElement('div');
-        el.className = 'confetti';
-        el.textContent = icons[i % icons.length];
-        el.style.left = `${Math.random() * 94}vw`;
-        el.style.animationDuration = `${1.5 + Math.random() * 1.2}s`;
-        el.style.animationDelay = `${Math.random() * 0.35}s`;
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), 3000);
-      }
-    }
-
-    function animateRoll(callback) {
-      isRolling = true;
-      updateUI();
-      const diceBox = document.getElementById('diceBox');
-      diceBox.classList.remove
+    <!-- Papan Duel Anime (P1 vs P2) -->
+    <div class="battle-board">
+      <!-- Fighter 1: Sora -->
+      <div class="fighter-card active-p1" id="p1Card">
+        <div class="avatar-wrap">
+          <svg class="avatar-svg" id="p1Avatar" viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="p1Bg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#0284c7" />
+                <stop offset="100%" stop-color="#312e81" />
+              </linearGradient>
+              <linearGradient id="hairBlue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#38bdf8" />
+                <stop offset="100%" stop-color="#1d4ed8" />
+              </linearGradient>
+            </defs>
+            <rect width="100" height="100" fill="url(#p1Bg)" />
+            <!-- Rambut Belakang & Bahu -->
+            <path d="M18 58 Q16 20 50 15 Q84 20 82 58 L86 88 L14 88 Z" fill="url(#hairBlue)" />
+            <path d="M22 96 Q26 75 50 75 Q74 75 78 96 Z" fill="#0f172a" />
+            <path d="M35 76 L50 89 L65 76" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" />
+            <rect x="44" y="67" width="12" height="12" rx="4" fill="#fde2cc" />
+            <!-- Wajah -->
+            <path d="M29 45 Q29 24 50 24 Q71 24 71 45 Q71 64 50 72 Q29 64 29 45 Z" fill="#ffe8d6" />
+            <ellipse cx="36" cy="56" rx="4.5" ry="2.2" fill="#fb7185" opacity="0.55" />
+            <ellipse cx="64" cy="56" rx="4.5" r
