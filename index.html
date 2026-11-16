@@ -3,20 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Duel Dadu - Telegram Mini App</title>
-  <!-- SDK Resmi Telegram Mini Apps -->
+  <title>Duel Dadu Neon - Telegram Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg-color: var(--tg-theme-bg-color, #17212b);
-      --sec-bg-color: var(--tg-theme-secondary-bg-color, #232e3c);
-      --text-color: var(--tg-theme-text-color, #ffffff);
-      --hint-color: var(--tg-theme-hint-color, #8e9ba8);
-      --btn-color: var(--tg-theme-button-color, #3390ec);
-      --btn-text: var(--tg-theme-button-text-color, #ffffff);
-      --accent-green: #2ecc71;
-      --accent-red: #e74c3c;
-      --accent-gold: #f1c40f;
+      --bg-dark: #090d16;
+      --bg-grad: radial-gradient(circle at 50% 0%, #1e293b 0%, #090d16 70%);
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --blue: #38bdf8;
+      --indigo: #6366f1;
+      --amber: #fbbf24;
+      --green: #34d399;
+      --red: #fb7185;
     }
 
     * {
@@ -28,12 +29,13 @@
     }
 
     body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
+      background: var(--bg-dark);
+      background-image: var(--bg-grad);
+      color: var(--text-main);
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      padding: calc(14px + var(--tg-safe-area-inset-top, 0px)) 14px calc(20px + var(--tg-safe-area-inset-bottom, 0px));
+      padding: calc(14px + var(--tg-safe-area-inset-top, 0px)) 14px calc(22px + var(--tg-safe-area-inset-bottom, 0px));
       overflow-x: hidden;
     }
 
@@ -43,6 +45,7 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
+      position: relative;
     }
 
     /* Header */
@@ -50,27 +53,55 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--sec-bg-color);
-      padding: 12px 16px;
-      border-radius: 14px;
+      gap: 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      padding: 12px 14px;
+      border-radius: 16px;
     }
     .user-info h2 {
       font-size: 16px;
       font-weight: 700;
+      letter-spacing: 0.2px;
     }
     .user-info p {
       font-size: 12px;
-      color: var(--hint-color);
+      color: var(--text-muted);
       margin-top: 2px;
     }
-    .stats-badge {
-      background: rgba(51, 144, 236, 0.16);
-      color: var(--btn-color);
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stats-pill {
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--blue);
       padding: 6px 10px;
-      border-radius: 10px;
-      font-size: 12px;
+      border-radius: 12px;
+      font-size: 11px;
       font-weight: 700;
+      line-height: 1.35;
       text-align: right;
+    }
+    .btn-sound {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.2s;
+    }
+    .btn-sound:active {
+      transform: scale(0.92);
     }
 
     /* Papan Skor */
@@ -80,106 +111,189 @@
       gap: 12px;
     }
     .player-card {
-      background: var(--sec-bg-color);
-      border-radius: 14px;
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 18px;
       padding: 14px;
-      border: 2px solid transparent;
-      transition: border-color 0.25s, transform 0.2s;
+      transition: all 0.25s ease;
       position: relative;
+      overflow: hidden;
     }
-    .player-card.active {
-      border-color: var(--btn-color);
+    .player-card.active-player {
+      border-color: var(--blue);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+      transform: translateY(-2px);
+    }
+    .player-card.active-bot {
+      border-color: var(--amber);
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
       transform: translateY(-2px);
     }
     .player-card.winner {
-      border-color: var(--accent-green);
+      border-color: var(--green);
+      box-shadow: 0 0 24px rgba(52, 211, 153, 0.3);
     }
-    .card-top {
+    .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--hint-color);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.4px;
     }
-    .turn-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--btn-color);
+    .turn-badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 99px;
+      font-weight: 800;
       display: none;
     }
-    .player-card.active .turn-dot {
+    .active-player .turn-badge {
       display: inline-block;
-      animation: pulse 1s infinite;
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--blue);
+    }
+    .active-bot .turn-badge {
+      display: inline-block;
+      background: rgba(251, 191, 36, 0.2);
+      color: var(--amber);
+    }
+    .score-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin: 8px 0 10px;
     }
     .score-num {
-      font-size: 34px;
+      font-size: 36px;
       font-weight: 800;
-      margin: 6px 0;
       line-height: 1;
+    }
+    .score-target {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
     }
     .progress-track {
       width: 100%;
-      height: 6px;
-      background: rgba(128, 128, 128, 0.2);
+      height: 7px;
+      background: rgba(255, 255, 255, 0.08);
       border-radius: 99px;
       overflow: hidden;
     }
     .progress-fill {
       height: 100%;
       width: 0%;
-      background: var(--btn-color);
-      transition: width 0.3s ease;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--blue), var(--indigo));
+      transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .bot-fill {
-      background: var(--accent-gold);
+      background: linear-gradient(90deg, #f59e0b, var(--amber));
     }
 
     /* Arena Dadu Tengah */
     .arena {
-      background: var(--sec-bg-color);
-      border-radius: 18px;
-      padding: 22px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      padding: 22px 16px 18px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 12px;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .arena::before {
+      content: '';
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.18), transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -55%);
+      pointer-events: none;
     }
     .round-pill {
-      background: rgba(128, 128, 128, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
       padding: 6px 14px;
       border-radius: 99px;
       font-size: 13px;
       font-weight: 600;
+      color: var(--text-muted);
+      z-index: 1;
     }
     .round-pill strong {
-      color: var(--accent-gold);
-      font-size: 15px;
+      color: var(--amber);
+      font-size: 16px;
+      margin-left: 4px;
     }
-    .dice-box {
-      width: 112px;
-      height: 112px;
-      background: var(--btn-color);
-      color: #ffffff;
-      border-radius: 24px;
+
+    .dice-stage {
+      position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 74px;
+      margin: 4px 0;
+      z-index: 1;
+    }
+    .dice-box {
+      width: 118px;
+      height: 118px;
+      background: linear-gradient(145deg, #38bdf8, #4f46e5);
+      color: #ffffff;
+      border-radius: 28px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 76px;
       line-height: 1;
       font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols', sans-serif;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      box-shadow:
+        0 14px 30px rgba(56, 189, 248, 0.28),
+        inset 0 2px 4px rgba(255, 255, 255, 0.45),
+        inset 0 -4px 8px rgba(0, 0, 0, 0.3);
       user-select: none;
-      transition: background 0.2s, transform 0.15s;
+      transition: background 0.25s, box-shadow 0.25s, transform 0.15s;
+    }
+    .dice-box.bot-mode {
+      background: linear-gradient(145deg, #fbbf24, #d97706);
+      box-shadow:
+        0 14px 30px rgba(251, 191, 36, 0.28),
+        inset 0 2px 4px rgba(255, 255, 255, 0.45),
+        inset 0 -4px 8px rgba(0, 0, 0, 0.3);
     }
     .dice-box.bust {
-      background: var(--accent-red);
+      background: linear-gradient(145deg, #fb7185, #be123c);
+      box-shadow:
+        0 14px 30px rgba(251, 113, 133, 0.38),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4);
+      animation: bustShake 0.4s ease;
     }
     .dice-box.rolling {
-      animation: shake 0.32s infinite;
+      animation: rollTumble 0.3s infinite linear;
     }
+
+    .pop-float {
+      position: absolute;
+      top: -12px;
+      font-size: 18px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 99px;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(10px) scale(0.8);
+    }
+    .pop-float.show {
+      animation: floatUp 0.85s ease forwards;
+    }
+
     .status-text {
       font-size: 14px;
       font-weight: 500;
@@ -187,108 +301,148 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--text-color);
+      color: var(--text-main);
       line-height: 1.4;
+      z-index: 1;
     }
 
     /* Tombol Kontrol */
     .controls {
       display: grid;
-      grid-template-columns: 1.3fr 1fr;
+      grid-template-columns: 1.35fr 1fr;
       gap: 10px;
     }
-    button {
+    .btn-action {
       border: none;
-      border-radius: 14px;
-      padding: 15px 12px;
+      border-radius: 16px;
+      padding: 16px 12px;
       font-size: 15px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
+      color: #ffffff;
+      transition: transform 0.1s, opacity 0.2s, box-shadow 0.2s;
     }
-    button:active:not(:disabled) {
-      transform: scale(0.97);
+    .btn-action:active:not(:disabled) {
+      transform: scale(0.96);
     }
-    button:disabled {
-      opacity: 0.45;
+    .btn-action:disabled {
+      opacity: 0.38;
       cursor: not-allowed;
+      box-shadow: none !important;
     }
     .btn-roll {
-      background: var(--btn-color);
-      color: var(--btn-text);
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      box-shadow: 0 8px 20px rgba(56, 189, 248, 0.25);
     }
     .btn-hold {
-      background: var(--accent-green);
-      color: #ffffff;
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
     }
     .btn-restart {
       grid-column: 1 / -1;
-      background: var(--sec-bg-color);
-      color: var(--text-color);
-      border: 1px solid rgba(128, 128, 128, 0.25);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
       padding: 12px;
       font-size: 14px;
+      font-weight: 700;
+      border-radius: 14px;
+      cursor: pointer;
     }
 
     /* Aturan Singkat */
     .rules {
-      background: var(--sec-bg-color);
-      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
       padding: 12px 14px;
       font-size: 12px;
-      color: var(--hint-color);
+      color: var(--text-muted);
       line-height: 1.5;
     }
     .rules b {
-      color: var(--text-color);
+      color: var(--text-main);
     }
 
-    @keyframes shake {
-      0% { transform: rotate(0deg) scale(1.04); }
-      25% { transform: rotate(10deg) scale(1.06); }
-      50% { transform: rotate(-10deg) scale(1.04); }
-      75% { transform: rotate(8deg) scale(1.06); }
+    /* Confetti sederhana */
+    .confetti {
+      position: fixed;
+      top: -20px;
+      font-size: 20px;
+      pointer-events: none;
+      z-index: 99;
+      animation: fallDown 2.2s linear forwards;
+    }
+
+    @keyframes rollTumble {
+      0%   { transform: rotate(0deg) scale(1.04); }
+      25%  { transform: rotate(12deg) scale(1.08); }
+      50%  { transform: rotate(-12deg) scale(1.04); }
+      75%  { transform: rotate(10deg) scale(1.08); }
       100% { transform: rotate(0deg) scale(1.04); }
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(1.3); }
+    @keyframes bustShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px) rotate(-4deg); }
+      40% { transform: translateX(8px) rotate(4deg); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+    @keyframes floatUp {
+      0%   { opacity: 0; transform: translateY(10px) scale(0.8); }
+      20%  { opacity: 1; transform: translateY(-6px) scale(1.08); }
+      100% { opacity: 0; transform: translateY(-34px) scale(1); }
+    }
+    @keyframes fallDown {
+      to {
+        transform: translateY(105vh) rotate(360deg);
+        opacity: 0;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <!-- Header Profil Telegram -->
+    <!-- Header -->
     <div class="header">
       <div class="user-info">
         <h2 id="greeting">Halo, Pemain! 👋</h2>
-        <p>Target: Capai 50 poin lebih dulu</p>
+        <p>Duel Dadu 50 • Arcade Mode</p>
       </div>
-      <div class="stats-badge">
-        🏆 Menang: <span id="winCount">0</span><br />
-        🎮 Main: <span id="playCount">0</span>
+      <div class="header-right">
+        <div class="stats-pill">
+          🏆 <span id="winCount">0</span> Menang<br />
+          🎮 <span id="playCount">0</span> Main
+        </div>
+        <button class="btn-sound" id="btnSound" onclick="toggleSound()" title="Suara">🔊</button>
       </div>
     </div>
 
     <!-- Papan Skor -->
     <div class="scoreboard">
-      <div class="player-card active" id="playerCard">
-        <div class="card-top">
-          <span id="playerLabel">KAMU</span>
-          <span class="turn-dot"></span>
+      <div class="player-card active-player" id="playerCard">
+        <div class="card-header">
+          <span id="playerLabel">😎 KAMU</span>
+          <span class="turn-badge">GILIRAN</span>
         </div>
-        <div class="score-num" id="playerScore">0</div>
+        <div class="score-row">
+          <span class="score-num" id="playerScore">0</span>
+          <span class="score-target">/ 50</span>
+        </div>
         <div class="progress-track">
           <div class="progress-fill" id="playerBar"></div>
         </div>
       </div>
 
       <div class="player-card" id="botCard">
-        <div class="card-top">
-          <span>BOT 🤖</span>
-          <span class="turn-dot"></span>
+        <div class="card-header">
+          <span>🤖 BOT</span>
+          <span class="turn-badge">BERPIKIR</span>
         </div>
-        <div class="score-num" id="botScore">0</div>
+        <div class="score-row">
+          <span class="score-num" id="botScore">0</span>
+          <span class="score-target">/ 50</span>
+        </div>
         <div class="progress-track">
           <div class="progress-fill bot-fill" id="botBar"></div>
         </div>
@@ -301,7 +455,10 @@
         Poin Ronde Ini: <strong id="roundScore">0</strong>
       </div>
 
-      <div class="dice-box" id="diceBox">🎲</div>
+      <div class="dice-stage">
+        <div class="pop-float" id="popFloat"></div>
+        <div class="dice-box" id="diceBox">🎲</div>
+      </div>
 
       <div class="status-text" id="statusText">
         Giliranmu! Tekan Lempar Dadu untuk mulai.
@@ -310,14 +467,14 @@
 
     <!-- Tombol Aksi -->
     <div class="controls">
-      <button class="btn-roll" id="btnRoll" onclick="playerRoll()">🎲 Lempar Dadu</button>
-      <button class="btn-hold" id="btnHold" onclick="playerHold()" disabled>💾 Simpan Poin</button>
+      <button class="btn-action btn-roll" id="btnRoll" onclick="playerRoll()">🎲 Lempar Dadu</button>
+      <button class="btn-action btn-hold" id="btnHold" onclick="playerHold()" disabled>💾 Simpan Poin</button>
       <button class="btn-restart" id="btnRestart" onclick="resetGame()">🔄 Mulai Ulang Duel</button>
     </div>
 
-    <!-- Panduan Singkat -->
+    <!-- Aturan -->
     <div class="rules">
-      <b>Cara Bermain:</b> Lempar dadu untuk mengumpulkan poin ronde (⚁–⚅). Tekan <b>Simpan Poin</b> kapan saja agar poin aman masuk ke skor utama. Awas! Jika keluar <b>⚀ (1)</b>, poin ronde hangus dan giliran pindah ke Bot.
+      <b>Aturan:</b> Kumpulkan poin ronde dari dadu <b>⚁–⚅</b>, lalu tekan <b>Simpan Poin</b> agar aman masuk skor utama. Jika keluar <b>⚀ (1)</b>, poin ronde hangus! Pemain pertama yang tembus <b>50 poin</b> menang.
     </div>
   </div>
 
@@ -325,25 +482,124 @@
     const TARGET_SCORE = 50;
     const DICE_EMOTES = { 1: '⚀', 2: '⚁', 3: '⚂', 4: '⚃', 5: '⚄', 6: '⚅' };
 
-    // Inisialisasi SDK Telegram WebApp
+    // --- Telegram Mini App SDK ---
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-
     if (tg) {
       tg.ready();
       tg.expand();
-      // Mencegah aplikasi tertutup tidak sengaja saat swipe ke bawah
-      if (typeof tg.disableVerticalSwipes === 'function') {
-        tg.disableVerticalSwipes();
-      }
-      // Tampilkan nama depan user Telegram
+      if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
+      if (typeof tg.setHeaderColor === 'function') tg.setHeaderColor('#090d16');
+      if (typeof tg.setBackgroundColor === 'function') tg.setBackgroundColor('#090d16');
+
       const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
       if (user && user.first_name) {
         document.getElementById('greeting').textContent = `Halo, ${user.first_name}! 👋`;
-        document.getElementById('playerLabel').textContent = user.first_name.toUpperCase();
+        document.getElementById('playerLabel').textContent = `😎 ${user.first_name.toUpperCase()}`;
       }
     }
 
-    // State Permainan
+    // --- Mesin Efek Suara (Web Audio API tanpa file MP3) ---
+    let audioCtx = null;
+    let soundEnabled = localStorage.getItem('dice_sound_enabled') !== 'false';
+
+    function updateSoundButton() {
+      document.getElementById('btnSound').textContent = soundEnabled ? '🔊' : '🔇';
+    }
+    updateSoundButton();
+
+    function ensureAudio() {
+      if (!soundEnabled) return null;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return null;
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+        return audioCtx;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function playTone(freq, duration, type = 'sine', volume = 0.14, delay = 0) {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime + delay;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+      } catch (e) {}
+    }
+
+    // Suara klik dadu bergulir
+    function sfxTick() {
+      const freq = 260 + Math.random() * 180;
+      playTone(freq, 0.04, 'triangle', 0.08);
+    }
+
+    // Suara dadu mendarat (2-6)
+    function sfxLand(val) {
+      playTone(360 + val * 60, 0.13, 'sine', 0.16);
+    }
+
+    // Suara simpan poin
+    function sfxHold() {
+      playTone(523.25, 0.11, 'triangle', 0.16, 0);
+      playTone(659.25, 0.16, 'triangle', 0.16, 0.09);
+    }
+
+    // Suara zonk (keluar 1)
+    function sfxBust() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.exponentialRampToValueAtTime(85, now + 0.35);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.37);
+      } catch (e) {}
+    }
+
+    // Suara menang
+    function sfxWin() {
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((n, idx) => playTone(n, 0.22, 'triangle', 0.18, idx * 0.09));
+    }
+
+    // Suara kalah
+    function sfxLose() {
+      const notes = [392.0, 329.63, 261.63];
+      notes.forEach((n, idx) => playTone(n, 0.25, 'sine', 0.15, idx * 0.14));
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('dice_sound_enabled', soundEnabled);
+      updateSoundButton();
+      if (soundEnabled) {
+        playTone(600, 0.08, 'sine', 0.12);
+      }
+      haptic('impact', 'light');
+    }
+
+    // --- State Permainan ---
     let playerScore = 0;
     let botScore = 0;
     let roundScore = 0;
@@ -355,14 +611,12 @@
     let rollInterval = null;
     let botTimeout = null;
 
-    // Helper Getaran Haptic Telegram
     function haptic(type, style) {
       if (!tg || !tg.HapticFeedback) return;
       if (type === 'impact') tg.HapticFeedback.impactOccurred(style || 'medium');
       if (type === 'notify') tg.HapticFeedback.notificationOccurred(style || 'success');
     }
 
-    // Simpan & Muat Statistik (Telegram CloudStorage atau localStorage)
     function loadStats() {
       if (tg && tg.initData && tg.isVersionAtLeast('6.9') && tg.CloudStorage) {
         tg.CloudStorage.getItem('dice_duel_stats', (err, val) => {
@@ -395,7 +649,6 @@
       document.getElementById('playCount').textContent = stats.plays;
     }
 
-    // RNG Adil (Crypto API)
     function rollD6() {
       const array = new Uint32Array(1);
       const maxValid = Math.floor(0x100000000 / 6) * 6;
@@ -407,175 +660,32 @@
       return (rand % 6) + 1;
     }
 
+    function showPop(text, bgColor) {
+      const pop = document.getElementById('popFloat');
+      pop.textContent = text;
+      pop.style.background = bgColor;
+      pop.style.color = '#ffffff';
+      pop.classList.remove('show');
+      void pop.offsetWidth; // restart CSS animasi
+      pop.classList.add('show');
+    }
+
+    function launchConfetti() {
+      const icons = ['🎉', '🎲', '✨', '🏆', '💎'];
+      for (let i = 0; i < 18; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti';
+        el.textContent = icons[i % icons.length];
+        el.style.left = `${Math.random() * 94}vw`;
+        el.style.animationDuration = `${1.5 + Math.random() * 1.2}s`;
+        el.style.animationDelay = `${Math.random() * 0.35}s`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+      }
+    }
+
     function animateRoll(callback) {
       isRolling = true;
       updateUI();
       const diceBox = document.getElementById('diceBox');
-      diceBox.classList.remove('bust');
-      diceBox.classList.add('rolling');
-
-      rollInterval = setInterval(() => {
-        diceBox.textContent = DICE_EMOTES[rollD6()];
-      }, 65);
-
-      setTimeout(() => {
-        clearInterval(rollInterval);
-        rollInterval = null;
-        const result = rollD6();
-        diceBox.classList.remove('rolling');
-        diceBox.textContent = DICE_EMOTES[result];
-        isRolling = false;
-        callback(result);
-      }, 380);
-    }
-
-    // Aksi Pemain: Lempar Dadu
-    function playerRoll() {
-      if (!isPlayerTurn || isRolling || gameOver) return;
-      haptic('impact', 'medium');
-
-      animateRoll((val) => {
-        if (val === 1) {
-          document.getElementById('diceBox').classList.add('bust');
-          haptic('notify', 'error');
-          roundScore = 0;
-          isPlayerTurn = false;
-          setStatus('Yah! Keluar ⚀ (1). Poin ronde hangus, giliran Bot...');
-          updateUI();
-          botTimeout = setTimeout(botTurn, 1000);
-        } else {
-          roundScore += val;
-          setStatus(`Keluar ${DICE_EMOTES[val]} (+${val})! Lempar lagi atau Simpan?`);
-          updateUI();
-        }
-      });
-    }
-
-    // Aksi Pemain: Simpan Poin
-    function playerHold() {
-      if (!isPlayerTurn || isRolling || gameOver || roundScore === 0) return;
-      haptic('impact', 'light');
-
-      playerScore += roundScore;
-      roundScore = 0;
-
-      if (playerScore >= TARGET_SCORE) {
-        endGame(true);
-        return;
-      }
-
-      isPlayerTurn = false;
-      setStatus('Poin tersimpan! Sekarang giliran Bot...');
-      updateUI();
-      botTimeout = setTimeout(botTurn, 850);
-    }
-
-    // Giliran AI Bot
-    function botTurn() {
-      if (isPlayerTurn || gameOver) return;
-
-      animateRoll((val) => {
-        if (val === 1) {
-          document.getElementById('diceBox').classList.add('bust');
-          roundScore = 0;
-          isPlayerTurn = true;
-          setStatus('Bot dapat ⚀ (1)! Poin Bot hangus. Giliranmu!');
-          updateUI();
-          return;
-        }
-
-        roundScore += val;
-        updateUI();
-
-        // Jika poin sudah cukup untuk menang, Bot langsung simpan
-        if (botScore + roundScore >= TARGET_SCORE) {
-          setStatus(`Bot dapat ${DICE_EMOTES[val]} dan menyimpan poin!`);
-          botTimeout = setTimeout(() => {
-            botScore += roundScore;
-            roundScore = 0;
-            endGame(false);
-          }, 700);
-          return;
-        }
-
-        // Strategi Bot: tahan jika poin ronde sudah >= 13 (lebih berani jika tertinggal)
-        const botRiskLimit = playerScore >= 38 ? 18 : 13;
-        if (roundScore >= botRiskLimit) {
-          setStatus(`Bot dapat ${DICE_EMOTES[val]} dan memilih Simpan Poin.`);
-          botTimeout = setTimeout(() => {
-            botScore += roundScore;
-            roundScore = 0;
-            isPlayerTurn = true;
-            setStatus('Giliranmu! Lempar dadu untuk mengejar skor.');
-            updateUI();
-          }, 800);
-        } else {
-          setStatus(`Bot dapat ${DICE_EMOTES[val]} (+${val}), Bot melempar lagi...`);
-          botTimeout = setTimeout(botTurn, 850);
-        }
-      });
-    }
-
-    function endGame(playerWon) {
-      gameOver = true;
-      stats.plays += 1;
-      if (playerWon) {
-        stats.wins += 1;
-        haptic('notify', 'success');
-        document.getElementById('playerCard').classList.add('winner');
-        setStatus(`🎉 SELAMAT! Kamu menang dengan skor ${playerScore} - ${botScore}!`);
-      } else {
-        haptic('notify', 'warning');
-        document.getElementById('botCard').classList.add('winner');
-        setStatus(`🤖 Bot menang (${botScore} - ${playerScore}). Coba balas di ronde berikutnya!`);
-      }
-      saveStats();
-      updateUI();
-    }
-
-    function resetGame() {
-      clearInterval(rollInterval);
-      clearTimeout(botTimeout);
-      playerScore = 0;
-      botScore = 0;
-      roundScore = 0;
-      isPlayerTurn = true;
-      isRolling = false;
-      gameOver = false;
-
-      const diceBox = document.getElementById('diceBox');
-      diceBox.classList.remove('rolling', 'bust');
-      diceBox.textContent = '🎲';
-
-      document.getElementById('playerCard').classList.remove('winner');
-      document.getElementById('botCard').classList.remove('winner');
-
-      setStatus('Duel baru dimulai! Tekan Lempar Dadu.');
-      updateUI();
-      haptic('impact', 'light');
-    }
-
-    function setStatus(msg) {
-      document.getElementById('statusText').textContent = msg;
-    }
-
-    function updateUI() {
-      document.getElementById('playerScore').textContent = playerScore;
-      document.getElementById('botScore').textContent = botScore;
-      document.getElementById('roundScore').textContent = roundScore;
-
-      document.getElementById('playerBar').style.width = `${Math.min(100, (playerScore / TARGET_SCORE) * 100)}%`;
-      document.getElementById('botBar').style.width = `${Math.min(100, (botScore / TARGET_SCORE) * 100)}%`;
-
-      document.getElementById('playerCard').classList.toggle('active', !gameOver && isPlayerTurn);
-      document.getElementById('botCard').classList.toggle('active', !gameOver && !isPlayerTurn);
-
-      document.getElementById('btnRoll').disabled = !isPlayerTurn || isRolling || gameOver;
-      document.getElementById('btnHold').disabled = !isPlayerTurn || isRolling || gameOver || roundScore === 0;
-    }
-
-    loadStats();
-    updateUI();
-  </script>
-</body>
-</html>
+      diceBox.classList.remove
